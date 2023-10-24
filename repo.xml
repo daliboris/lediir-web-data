@@ -1,0 +1,50 @@
+<meta xmlns="http://exist-db.org/xquery/repo">
+    <description>Elektronická lexikální databáze indoíránských jazyků: data</description>
+    <author>Boris Lehečka</author>
+    <website>https://eldi.soc.cas.cz/</website>
+    <status>beta</status>
+    <license>GNU-LGPL</license>
+    <copyright>true</copyright>
+    <type>library</type>
+    <prepare>pre-install.xql</prepare>
+    <finish>post-install.xql</finish>
+    <target>lediir-data</target>
+    <permissions user="redaktor" group="tei" mode="rw-r--r--" />
+    <deployed />
+    <changelog>
+        <change version="0.6.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>refaktoring modulů <b>pre-install.xql</b> a <b>post-install.xql</b></li>
+                <li>nastavení majitele podřízených kolekcí</li>
+            </ul>
+        </change>
+        <change version="0.5.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>modul <b>modules/report.xql</b> s přehledem indexovaných polí a faset včetně jejich obsahu</li>
+                <li>úprava obsah <b>build.xml</b> pro potřeby datového repozitáře</li>
+            </ul>
+        </change>
+    <change version="0.4.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>index kompletnch hesel pro komplexní hesla</li>
+            </ul>
+        </change>
+        <change version="0.3.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>nastavení závislosti na tei-publisher-lib na verzi 3</li>
+            </ul>
+        </change>
+        <change version="0.2.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>umístění dat ve složce data a podsložkách</li>
+                <li>odstranění závislosti na původních modulech TEI Publisheru</li>
+            </ul>
+        </change>
+        <change version="0.1.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>samostatná aplikace eXist-db pro data</li>
+                <li>přenesení konfigurace a nastavení z původní aplikace</li>
+            </ul>
+        </change>
+    </changelog>
+</meta>

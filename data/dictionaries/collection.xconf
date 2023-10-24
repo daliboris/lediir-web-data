@@ -1,0 +1,86 @@
+<collection xmlns="http://exist-db.org/collection-config/1.0">
+ <index xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dbk="http://docbook.org/ns/docbook">
+  <fulltext default="none" attributes="false"/>
+  <lucene>
+    <module uri="http://teipublisher.com/index" prefix="nav" at="../../index.xql"/>
+   <text match="/tei:TEI">
+    <ignore qname="tei:front"/>
+    <ignore qname="tei:text"/>
+    <ignore qname="tei:back"/>
+    <facet dimension="dictionary" expression="nav:get-metadata(ancestor-or-self::tei:TEI, 'title[@type=main|full]-content')"/>
+    <facet dimension="language" expression="nav:get-metadata(ancestor-or-self::tei:TEI, 'language')"/>
+    </text>
+   <text match="/tei:TEI/tei:text">
+    <ignore qname="tei:div"/>
+    <field name="title" expression="nav:get-metadata(ancestor::tei:TEI, 'title[@type=main|full]-content')"/>
+    <field name="author" expression="nav:get-metadata(ancestor::tei:TEI, 'author')"/>
+    <field name="language" expression="nav:get-metadata(ancestor::tei:TEI, 'language')"/>
+    <field name="date" expression="nav:get-metadata(ancestor::tei:TEI, 'date')"/>
+    <field name="file" expression="util:document-name(.)"/>
+    <!-- <facet dimension="language" expression="nav:get-metadata(ancestor::tei:TEI, 'language')"/> -->
+    <facet dimension="dictionary" expression="nav:get-metadata(ancestor::tei:TEI, 'title[@type=main|full]-content')"/>
+   </text>
+   <text qname="tei:div">
+    <ignore qname="tei:div"/>
+    <field name="letter" expression="nav:get-metadata(., 'letter')"/>
+    <field name="chapterId" expression="nav:get-metadata(., 'chapterId')"/>
+    <field name="chapter" expression="nav:get-metadata(., 'chapter')"/>
+    <!-- <facet dimension="language" expression="nav:get-metadata(ancestor::tei:TEI, 'language')"/> -->
+    <facet dimension="dictionary" expression="nav:get-metadata(ancestor::tei:TEI, 'title[@type=main|full]-content')"/>
+   </text>
+   <text qname="tei:entry">
+    <field name="sortKey" expression="nav:get-metadata(., 'sortKey')"/>
+    <field name="letter" expression="nav:get-metadata(., 'letter')"/>
+    <field name="chapterId" expression="nav:get-metadata(., 'chapterId')"/>
+    <field name="chapter" expression="nav:get-metadata(., 'chapter')"/>
+    <field name="lemma" expression="nav:get-metadata(., 'lemma')" />
+    <field name="headword" expression="nav:get-metadata(., 'headword')" />
+    <field name="definition" expression="nav:get-metadata(., 'definition')" />
+    <field name="example" expression="nav:get-metadata(., 'example')"/>
+    <field name="translation" expression="nav:get-metadata(., 'translation')"/>
+    <field name="domain" expression="nav:get-metadata(., 'domain')" />
+    <field name="reversal" expression="nav:get-metadata(., 'reversal')" />
+    <field name="partOfSpeechAll" expression="nav:get-metadata(., 'partOfSpeechAll')"/>
+    <field name="styleAll" expression="nav:get-metadata(., 'styleAll')"/>
+    <field name="pronunciation" expression="nav:get-metadata(., 'pronunciation')"/>
+    <field name="complexForm" expression="nav:get-metadata(., 'complexForm')"/>
+    <facet dimension="dictionary" expression="nav:get-metadata(ancestor::tei:TEI, 'title[@type=main|full]-content')"/>
+    <facet dimension="objectLanguage" expression="nav:get-metadata(., 'object-language')"/>
+    <facet dimension="targetLanguage" expression="nav:get-metadata(., 'target-language')"/>
+    <facet dimension="partOfSpeech" expression="nav:get-metadata(., 'partOfSpeech')"/>
+    <facet dimension="domain" expression="nav:get-metadata(., 'domain')" />
+    <facet dimension="domainHierarchy" expression="nav:get-metadata(., 'domainHierarchy')" hierarchical="yes" />
+    <facet dimension="style" expression="nav:get-metadata(., 'style')" />
+    <facet dimension="polysemy" expression="nav:get-metadata(., 'polysemy')"/>
+    <facet dimension="frequency" expression="nav:get-metadata(., 'frequency')"/>
+    <facet dimension="complexFormType" expression="nav:get-metadata(., 'complexFormType')"/>
+   </text>
+   <text qname="tei:head"/>
+   <text match="//tei:titleStmt/tei:title"/>
+   <text match="//tei:msDesc/tei:head"/>
+   <text match="//tei:listPlace/tei:place/tei:placeName"/>
+   <text qname="tei:catDesc">
+    <field name="idno" expression="nav:get-metadata(., 'category-idno')" />
+    <field name="term" expression="nav:get-metadata(., 'category-term')" />
+   </text>
+   <text qname="dbk:article">
+    <ignore qname="dbk:section"/>
+    <field name="title" expression="nav:get-metadata(., 'title')"/>
+    <field name="file" expression="util:document-name(.)"/>
+    <facet dimension="genre" expression="nav:get-metadata(., 'genre')" hierarchical="yes"/>
+    <facet dimension="language" expression="nav:get-metadata(., 'language')"/>
+   </text>
+   <text qname="dbk:section">
+    <ignore qname="dbk:section"/>
+    <facet dimension="genre" expression="nav:get-metadata(ancestor::dbk:article, 'genre')" hierarchical="yes"/>
+    <facet dimension="language" expression="nav:get-metadata(ancestor::dbk:article, 'language')"/>
+   </text>
+   <text qname="dbk:title"/>
+  </lucene>
+  <range>
+    <create qname="@type" type="xs:string"/>
+    <create qname="@xml:lang" type="xs:string"/>
+    <create qname="@class" type="xs:string"/>
+  </range>
+</index>
+</collection>

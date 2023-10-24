@@ -1,0 +1,23 @@
+{
+    "servers": {
+        "localhost": {
+            "server": "http://localhost:8080/exist",
+            "user": "admin",
+            "password": "",
+            "root": "/db/apps/lediir-data"    
+        }
+    },
+    "sync": {
+        "server": "localhost",
+        "ignore": [
+            ".existdb.json",
+            ".git/**",
+            "node_modules/**",
+            "bower_components/**",
+            "build/**",
+            "*.code-workspace",
+            "*.properties",
+            "build.xml"
+        ]
+    }
+}

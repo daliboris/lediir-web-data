@@ -20,7 +20,11 @@ declare variable $collection-mode :="rwxrwxr-x";
 declare variable $dictionaries := "dictionaries";
 declare variable $dictionaries-path := $data-path || "/" || $dictionaries;
 declare variable $about := "about";
-declare variable $abrout-path :=$data-path || "/" || $about;
+declare variable $about-path := $data-path || "/" || $about;
+declare variable $metadata := "metadata";
+declare variable $metadata-path := $data-path || "/" || $metadata;
+declare variable $feedback := "feedback";
+declare variable $feedback-path := $data-path || "/" || $feedback;
 
 
 
@@ -33,6 +37,14 @@ sm:chmod(xs:anyURI($target || $dictionaries-path), $collection-mode),
 sm:chown(xs:anyURI($target || $dictionaries-path), $owner),
 sm:chgrp(xs:anyURI($target || $dictionaries-path), $group),
 xmldb:create-collection($target || $data-path, $about),
-sm:chmod(xs:anyURI($target || $abrout-path), $collection-mode),
-sm:chown(xs:anyURI($target || $abrout-path), $owner),
-sm:chgrp(xs:anyURI($target || $abrout-path), $group)
+sm:chmod(xs:anyURI($target || $about-path), $collection-mode),
+sm:chown(xs:anyURI($target || $about-path), $owner),
+sm:chgrp(xs:anyURI($target || $about-path), $group),
+xmldb:create-collection($target || $data-path, $metadata),
+sm:chmod(xs:anyURI($target || $metadata-path), $collection-mode),
+sm:chown(xs:anyURI($target || $metadata-path), $owner),
+sm:chgrp(xs:anyURI($target || $metadata-path), $group),
+xmldb:create-collection($target || $data-path, $feedback),
+sm:chmod(xs:anyURI($target || $feedback-path), $collection-mode),
+sm:chown(xs:anyURI($target || $feedback-path), $owner),
+sm:chgrp(xs:anyURI($target || $feedback-path), $group)

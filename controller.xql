@@ -94,12 +94,14 @@ else
             "api-odd.xql" 
         else if (matches($exist:path, "/+tex$") or matches($exist:path, "/+api/+apps/+generate$")) then
             "api-dba.xql"
+        else if(matches($exist:path, '/+upload.xql')) then
+            "upload.xql"
         else 
             "api.xql"
         
     return
         <dispatch xmlns="http://exist.sourceforge.net/NS/exist">
-            <forward url="{$exist:controller}/modules/lib/{$main}">
+            <forward url="{$exist:controller}/modules/{$main}">
                 <set-header name="Access-Control-Allow-Origin" value="{$allowOrigin}"/>
                 { if ($allowOrigin = "*") then () else <set-header name="Access-Control-Allow-Credentials" value="true"/> }
                 <set-header name="Access-Control-Allow-Methods" value="GET, POST, DELETE, PUT, PATCH, OPTIONS"/>

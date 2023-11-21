@@ -3,6 +3,8 @@ xquery version "3.1";
 module namespace idx="http://teipublisher.com/index";
 
 declare namespace array = "http://www.w3.org/2005/xpath-functions/array";
+declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
+
 
 declare namespace tei="http://www.tei-c.org/ns/1.0";
 declare namespace dbk="http://docbook.org/ns/docbook";
@@ -20,6 +22,38 @@ declare variable $idx:app-root :=
             $rawPath
     ;
 declare variable $idx:taxonomy-root := doc($idx:app-root || "/data/about/LeDIIR-FACS-about.xml");
+
+declare variable $idx:taxonomies := 
+    let $categories := $idx:taxonomy-root//tei:teiHeader//tei:taxonomy[@xml:id != 'LeDIIR.taxonomy']
+    return map:merge( for $category in $categories//tei:category
+        let $terms := map:merge(for $desc in $category/tei:catDesc return 
+              map {
+               $desc/@xml:lang/data() :
+               map {
+               "id" : $desc/tei:idno/data(),
+               "term" : $desc/tei:term/data()
+               }
+               }
+              )
+        return map 
+        { 
+            $category/@xml:id/data() :
+             $terms
+        }
+    )
+  ;
+
+declare function idx:get-taxonomy($keys as xs:string*) {
+    let $inner := function($vk, $vv) {$vv}
+    let $values := function($k, $v) {
+      concat($v("id"), ' ', $v("term"))
+    }
+
+    for $key in $keys
+        let $id := substring($key, 2)
+        let $taxonomy := $idx:taxonomies($id)
+        return if(empty($taxonomy)) then () else map:for-each($taxonomy, $values)
+};
 
 (:~
  : Helper function called from collection.xconf to create index fields and facets.
@@ -58,24 +92,25 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
                                                                $header//tei:msDesc/tei:head,
                                                                $header//tei:titleStmt/(tei:title[@type = ('main', 'full')]|tei:title)[1]
                                                                ) ! normalize-space(), " - ")
-            case "sortKey" return if($root/@sortKey)
+            case "entry" return idx:get-entry-index($root)
+            case "sortKey" return idx:get-sortKey($root) (: if($root/@sortKey)
               then $root/@sortKey
-              else $root//tei:form[@type=('lemma', 'variant')][1]/tei:orth[1]
-
-            case "letter" return $root/ancestor-or-self::tei:div[@type='letter']/tei:head[@type='letter']
+              else $root//tei:form[@type=('lemma', 'variant')][1]/tei:orth[1] :)
+            case "sortKeyWithFrequency" return idx:get-sortKey-with-frequency($root)
+            case "letter" return $root/ancestor-or-self::tei:div[@type='letter']/tei:head[@type='letter']/data()
             case "chapterId" return $root/ancestor-or-self::tei:div[1]/@xml:id
             case "chapter" return $root/ancestor-or-self::tei:div[@type='letter']/@n
-            case "lemma" return $root//tei:form[@type=('lemma', 'variant')]/tei:orth
-            case "headword" return $root//(tei:form[@type=('lemma', 'variant')]/tei:orth | tei:ref[@type='reversal'] | tei:form[@type=('lemma', 'variant')]/tei:pron)
+            case "lemma" return $root/tei:form[@type=('lemma', 'variant')]/tei:orth
+            case "headword" return let $lemma := $root/tei:form[@type=('lemma', 'variant')] return ($lemma/tei:orth, $lemma/tei:pron, $root//tei:ref[@type='reversal'])
             case "object-language" return idx:get-object-language($root)
             case "target-language" return idx:get-target-language($root)
-            case "definition" return $root//tei:sense//tei:def
+            case "definition" return $root//tei:sense//tei:def/normalize-space(.)
             case "example" return $root//tei:sense//tei:cit[@type='example']/tei:quote
             case "translation" return $root//tei:sense//tei:cit[@type='example']/tei:cit[@type='translation']/tei:quote
             case "partOfSpeech" return $root//tei:gram[@type='pos']
             case "partOfSpeechAll" return idx:get-pos($root)
-            case "pronunciation" return $root//tei:form[@type=('lemma', 'variant')]/tei:pron
-            case "complexForm" return $root[self::*/@type='complexForm']/tei:form//tei:orth/translate(., " ", "")
+            case "pronunciation" return $root/tei:form[@type=('lemma', 'variant')]/tei:pron
+            case "complexForm" return $root/tei:entry[@type='complexForm']/tei:form//tei:orth/translate(., " ", "")
             case "reversal" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('en', 'cs-CZ')]
             case "domain" return idx:get-domain($root)
             case "domainHierarchy" return idx:get-domain-hierarchy($root)
@@ -88,6 +123,43 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "complexFormType" return idx:get-complex-form-type($root)
             default return
                 ()
+};
+
+declare function idx:get-entry-metadata($entry as element(), $field as xs:string) { 
+    
+        switch ($field)
+            case "sortKey" return idx:get-sortKey($entry)
+            default return ()
+};
+
+declare function idx:get-entry-index($entry as element()) as xs:string* { 
+    let $elements := for $element in $entry/*[not(self::tei:entry)]//*[not(*)]
+        return if($element[self::tei:pc] or $element[self::tei:lbl[@type='cross-rerefence']]) then () else $element
+    for $element in $elements
+        let $terminology := if ($element/@ana) then
+            idx:get-values-from-terminology($entry, $element/@ana)
+            else ()
+        return ($terminology, $element/@expand/data(), $element/text())
+};
+
+
+declare function idx:get-sortKey ($entry as element()?) as xs:string {
+    if (empty($entry)) then ()
+    else
+    if($entry/@sortKey)
+              then $entry/@sortKey
+              else $entry//tei:form[@type=('lemma', 'variant')][1]/tei:orth[1]
+};
+declare function idx:get-sortKey-with-frequency($entry as element()?) as xs:string {
+    if (empty($entry)) then ()
+    else
+    let $frequency := idx:get-frequency($entry)
+    let $frequency := if(empty($frequency) or $frequency = '') then "Z-" else $frequency || "-"
+    return $frequency || idx:get-sortKey($entry)
+};
+
+declare function idx:get-frequency($entry as element()?) as xs:string? {
+    $entry//tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
 };
 declare function idx:get-domain-hierarchy($entry as element()?) {
 if (empty($entry)) then ()
@@ -155,11 +227,16 @@ declare function idx:get-pos($entry as element()?) {
 };
 
 declare function idx:get-values-from-terminology($entry as element()?, $targets as item()*) {
+    
+    (: idx:get-taxonomy($targets) :)
+    
     for $target in $targets
-    (: let $category := id(substring($target, 2), root($entry)) :)
-    let $category := id(substring($target, 2), $idx:taxonomy-root)
+     (: let $category := id(substring($target, 2), root($entry))  :)
+     let $category := id(substring($target, 2), $idx:taxonomy-root)
+     let $description := $category/ancestor-or-self::tei:category[(parent::tei:category or parent::tei:taxonomy)]/tei:catDesc
     return
-        $category/ancestor-or-self::tei:category[(parent::tei:category or parent::tei:taxonomy)]/tei:catDesc/(tei:idno | tei:term)
+        ($description/tei:idno, $description/tei:term)
+    
 };
 
 

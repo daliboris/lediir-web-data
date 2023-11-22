@@ -12,6 +12,14 @@
     <permissions user="redaktor" group="tei" mode="rw-r--r--" />
     <deployed />
     <changelog>
+        <change version="0.7.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>nové podřízené kolekce pro <i>metadata</i> a zpětnou vazbu (<i>feedback</i>), úpravy <b>post-install.xql</b></li>
+                <li>prohledávací pole celé heslové stati</li>
+                <li>pole pro třídění závislé na frekvenci výskytu</li>
+                <li>přizpůsobení kolekcí pro práci se samostatnými heslovými statěmi (už ne po písmenech)</li>
+            </ul>
+        </change>
         <change version="0.6.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
                 <li>refaktoring modulů <b>pre-install.xql</b> a <b>post-install.xql</b></li>

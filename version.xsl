@@ -5,6 +5,7 @@
      exclude-result-prefixes="r p"
     version="1.0">
 
+  <xsl:strip-space elements="*" />
   <xsl:output method="xml" indent="yes"/>
  <xsl:param name="version" select="''" />
  <xsl:variable name="version-text">
@@ -16,7 +17,7 @@
  <xsl:strip-space elements="*"/>
 
 
- <xsl:template match="r:meta/r:description" priority="2">
+ <xsl:template match="r:meta/r:description | r:meta/r:target | p:package/p:title" priority="2">
  <xsl:copy>
    <xsl:value-of select="concat(., $version-text)" />
  </xsl:copy>

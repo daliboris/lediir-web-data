@@ -1,5 +1,5 @@
 <project name="lediir" default="xar">
-    <property name="data.version" value="1" />
+    <property name="data.version" value="0" />
     <xmlproperty file="expath-pkg.xml" /> <!-- Adjust path below to match location of your npm binary -->
     <property name="project.version" value="${package(version)}" />
     <property name="project.app" value="${package(abbrev)}" />
@@ -11,7 +11,7 @@
         </condition>
     </target>
 
-    <target name="clean">
+    <target name="clean" depends="repo.clean">
         <echo message="Deleting ${build} directory" />
         <delete dir="${build}" />
     </target>
@@ -21,7 +21,7 @@
     <target name="xar-complete" depends="clean,xar" />
     <target name="xar-zip" depends="repo.prepare">
         <mkdir dir="${build.dir}" />
-        <zip basedir="." destfile="${build.dir}/${project.app}-${project.version}.xar" excludes="${build.dir} ${build.dir}/* *.build.properties build.properties .existdb.json *.xstrc .gitignore *.code-workspace local.*" />
+        <zip basedir="." destfile="${build.dir}/${project.app}-${project.version}.xar" excludes="${build.dir} ${build.dir}/* *.build.properties .github/** .vs/** .vscode/** build.properties .existdb.json *.xstrc .gitignore *.code-workspace local.*" />
         <copy file="${build.dir}/${project.app}-${project.version}.xar" overwrite="true" tofile="${build.dir}/${project.app}.xar"/>
     </target>
     <target name="xar-versions" if="version.is.set"  depends="test.if.version.is.set">

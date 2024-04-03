@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><meta xmlns="http://exist-db.org/xquery/repo">
-    <description>Elektronická lexikální databáze indoíránských jazyků: data-1</description>
+    <description>Elektronická lexikální databáze indoíránských jazyků: data</description>
     <author>Boris Lehečka</author>
     <website>https://eldi.soc.cas.cz/</website>
     <status>beta</status>
@@ -14,23 +14,7 @@
     <changelog>
         <change version="0.7.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
-                <li>
-                                                                                nové podřízené kolekce pro 
-                    
-                    
-                    
-                    <i>metadata</i>
-                                                                                 a zpětnou vazbu (
-                    
-                    
-                    
-                    <i>feedback</i>
-                                                                                ), úpravy 
-                    
-                    
-                    
-                    <b>post-install.xql</b>
-                </li>
+                <li>nové podřízené kolekce pro <i>metadata</i> a zpětnou vazbu (<i>feedback</i>), úpravy <b>post-install.xql</b></li>
                 <li>prohledávací pole celé heslové stati</li>
                 <li>pole pro třídění závislé na frekvenci výskytu</li>
                 <li>přizpůsobení kolekcí pro práci se samostatnými heslovými statěmi (už ne po písmenech)</li>
@@ -38,45 +22,14 @@
         </change>
         <change version="0.6.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
-                <li>
-                                                                                refaktoring modulů 
-                    
-                    
-                    
-                    <b>pre-install.xql</b>
-                                                                                 a 
-                    
-                    
-                    
-                    <b>post-install.xql</b>
-                </li>
+                <li>refaktoring modulů <b>pre-install.xql</b> a <b>post-install.xql</b></li>
                 <li>nastavení majitele podřízených kolekcí</li>
             </ul>
         </change>
         <change version="0.5.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
-                <li>
-                                                                                modul 
-                    
-                    
-                    
-                    <b>modules/report.xql</b>
-                                                                                 s přehledem indexovaných polí a faset včetně jejich obsahu
-                
-                
-                
-                </li>
-                <li>
-                                                                                úprava obsah 
-                    
-                    
-                    
-                    <b>build.xml</b>
-                                                                                 pro potřeby datového repozitáře
-                
-                
-                
-                </li>
+                <li>modul <b>modules/report.xql</b> s přehledem indexovaných polí a faset včetně jejich obsahu</li>
+                <li>úprava obsah <b>build.xml</b> pro potřeby datového repozitáře</li>
             </ul>
         </change>
         <change version="0.4.0">

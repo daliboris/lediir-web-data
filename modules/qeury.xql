@@ -36,8 +36,7 @@ let $items := collection($q:collection)//tei:entry[
                 map { "leading-wildcard": "yes", "filter-rewrite": "yes" }
         )]
 let $items := for $item in $items 
-let $x :=  functx:add-attributes($item, (xs:QName("n")), ft:score($item))
 order by ft:score($item) descending
-return   util:expand($x)
+return   util:expand($item) ! functx:add-attributes($item, (xs:QName("n")), ft:score($item))
 
 return <body xmlns="http://www.tei-c.org/ns/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:exist="http://exist.sourceforge.net/NS/exist">{($query, $items)}</body>

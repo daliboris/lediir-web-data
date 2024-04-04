@@ -13,6 +13,6 @@ let $items := collection($q:collection)//tei:entry[
         map { "leading-wildcard": "yes", "filter-rewrite": "yes", "fields": ($name) })
         ]
 let $items := for $item in $items order by ft:score($item) descending
-return $item
+return util:expand($item)
 
-return $items
+return <body xmlns="http://www.tei-c.org/ns/1.0" xmlns:exist="http://exist.sourceforge.net/NS/exist">{$items}</body>

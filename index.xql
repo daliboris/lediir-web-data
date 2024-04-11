@@ -9,6 +9,28 @@ declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
 declare namespace tei="http://www.tei-c.org/ns/1.0";
 declare namespace dbk="http://docbook.org/ns/docbook";
 
+declare namespace functx = "http://www.functx.com";
+
+
+declare function functx:substring-before-last
+  ( $arg as xs:string? , $delim as xs:string )  as xs:string {
+
+   if (contains($arg, $delim))
+   then replace($arg,
+            concat('^(.*)', $delim,'.*'), '$1')
+   else ''
+ } ;
+
+ declare variable $idx:frequency-number := map {
+    'A' : 50,
+    'B' : 40,
+    'C' : 30,
+    'D' : 20,
+    'E' : 10,
+    'R' : 1,
+    'X' : 1
+ };
+
 declare variable $idx:app-root :=
     let $rawPath := system:get-module-load-path()
     return
@@ -24,6 +46,7 @@ declare variable $idx:app-root :=
 declare variable $idx:taxonomy-root := doc($idx:app-root || "/data/about/LeDIIR-FACS-about.xml");
 
 declare variable $idx:taxonomies := 
+    if(exists($idx:taxonomy-root)) then
     let $categories := $idx:taxonomy-root//tei:teiHeader//tei:taxonomy[@xml:id != 'LeDIIR.taxonomy']
     return map:merge( for $category in $categories//tei:category
         let $terms := map:merge(for $desc in $category/tei:catDesc return 
@@ -41,19 +64,35 @@ declare variable $idx:taxonomies :=
              $terms
         }
     )
+    else map {}
   ;
 
-declare function idx:get-taxonomy($keys as xs:string*) {
-    let $inner := function($vk, $vv) {$vv}
-    let $values := function($k, $v) {
-      concat($v("id"), ' ', $v("term"))
-    }
-
-    for $key in $keys
-        let $id := substring($key, 2)
-        let $taxonomy := $idx:taxonomies($id)
-        return if(empty($taxonomy)) then () else map:for-each($taxonomy, $values)
+declare function idx:concatenate-emulated-text ($text as xs:string, $previous-text as xs:string) as xs:string {
+  let $before := functx:substring-before-last($text, " ")
+  
+  return
+  if ($before = "") then
+     $previous-text || "&#xa;" || $text
+  else
+    idx:concatenate-emulated-text($before, $previous-text || "&#xa;" || $text)
 };
+
+declare function idx:emulate-payload ($text as xs:string, $sense-boost as xs:integer, $frequency as xs:integer) as xs:string 
+{ 
+  let $tokens := tokenize($text)
+  let $result := idx:concatenate-emulated-text($text, "")
+  let $result := if($sense-boost <= 1) then $result
+    else
+    for $i in (1 to $sense-boost)
+    return $result
+(:
+  let $result := if($frequency <= 1) then $result
+    else
+    for $i in (1 to $frequency)
+    return $result
+:)
+  return string-join($result, "&#xa;")
+ };
 
 (:~
  : Helper function called from collection.xconf to create index fields and facets.
@@ -104,7 +143,7 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "headword" return let $lemma := $root/tei:form[@type=('lemma', 'variant')] return ($lemma/tei:orth, $lemma/tei:pron, $root//tei:ref[@type='reversal'])
             case "object-language" return idx:get-object-language($root)
             case "target-language" return idx:get-target-language($root)
-            case "definition" return $root//tei:sense//tei:def/normalize-space(.)
+            case "definition" return idx:get-definition-index($root) (: $root//tei:sense//tei:def/normalize-space(.) :)
             case "example" return $root//tei:sense//tei:cit[@type='example']/tei:quote
             case "translation" return $root//tei:sense//tei:cit[@type='example']/tei:cit[@type='translation']/tei:quote
             case "partOfSpeech" return $root//tei:gram[@type='pos']
@@ -119,10 +158,31 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "category-idno" return $root/tei:idno
             case "category-term" return $root/tei:term
             case "polysemy" return count($root[not(parent::tei:entry)]//tei:sense)
+            case "frequencyScore" return idx:get-frequency-score($root)
             case "frequency" return $root//tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
             case "complexFormType" return idx:get-complex-form-type($root)
             default return
                 ()
+};
+
+declare function idx:get-definition-index($entry as element()) { 
+    
+    for $sense at $i in $entry//tei:sense
+        let $text := $sense//tei:def/normalize-space()
+        let $sense-boost := if($i = 1) then 3 else if($i = 2) then 2 else 1
+        return if(exists($text)) then
+             idx:emulate-payload($text, $sense-boost, 1)
+             else ()
+};
+
+declare function idx:get-frequency-score($entry as element()) { 
+let $frequency := $entry/tei:usg[@type='frequency'][1]/@value/tokenize(., '-')[1] ! substring(., 2)
+    let $frequency := if(exists($frequency)) then 
+        if (map:contains($idx:frequency-number, $frequency)) then    
+         map:get($idx:frequency-number, $frequency)
+          else 1
+        else 1
+    return $frequency
 };
 
 declare function idx:get-entry-metadata($entry as element(), $field as xs:string) { 
@@ -162,6 +222,9 @@ declare function idx:get-frequency($entry as element()?) as xs:string? {
     $entry//tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
 };
 declare function idx:get-domain-hierarchy($entry as element()?) {
+if(not(exists($idx:taxonomy-root))) 
+then ()
+else
 if (empty($entry)) then ()
 else
 (: let $root := root($entry) :)
@@ -181,8 +244,10 @@ return if (empty($ids))
  :)
 declare function idx:get-hierarchical-descriptor($keys as xs:string*, $root as item()) {
   array:for-each (array {$keys}, function($key) {
+        if(exists(id($key,$root))) then
         id($key,$root)
         /ancestor-or-self::tei:category/tei:catDesc[@xml:lang='en']/concat(tei:idno, ' ', tei:term)
+        else ()
     })
 };
 
@@ -229,14 +294,19 @@ declare function idx:get-pos($entry as element()?) {
 declare function idx:get-values-from-terminology($entry as element()?, $targets as item()*) {
     
     (: idx:get-taxonomy($targets) :)
-    
-    for $target in $targets
-     (: let $category := id(substring($target, 2), root($entry))  :)
-     let $category := id(substring($target, 2), $idx:taxonomy-root)
-     let $description := $category/ancestor-or-self::tei:category[(parent::tei:category or parent::tei:taxonomy)]/tei:catDesc
-    return
-        ($description/tei:idno, $description/tei:term)
-    
+    if(exists($idx:taxonomy-root))
+        then    
+        for $target in $targets
+        (: let $category := id(substring($target, 2), root($entry))  :)
+        let $category := id(substring($target, 2), $idx:taxonomy-root)
+        let $description := if(exists($category)) then
+            $category/ancestor-or-self::tei:category[(parent::tei:category or parent::tei:taxonomy)]/tei:catDesc
+            else ()
+        return if(exists($description)) then
+            ($description/tei:idno, $description/tei:term)
+            else ()
+
+    else ()
 };
 
 

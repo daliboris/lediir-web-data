@@ -60,7 +60,7 @@
         <xslt style="${app.build.dir}/version.xsl" in="expath-pkg.xml" out="${app.build.dir}/expath-pkg.xml">
             <param name="version" expression="${data.version}"/>
         </xslt>
-        <replace dir="${app.build.dir}/modules/" token="lediir-data" value="lediir-data-${data.version}">
+        <replace dir="${app.build.dir}/modules/" token="/lediir-data/" value="/lediir-data-${data.version}/">
             <include name="**/*.xq?"/>
         </replace>
     </target>

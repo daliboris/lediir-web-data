@@ -26,17 +26,23 @@ $element/@*,
 $element/node() }
 };
 
-let $query := <p xmlns="http://www.tei-c.org/ns/1.0">
-Dotaz: {$q:field} = {$q:query}, boost = {$q:field-boost}
-</p>
+let $query := <exist:query field="{$q:field}" query="{$q:query}" boost="{$q:field-boost}" />
+
 
 let $items := collection($q:collection)//tei:entry[
         ft:query(
                 ., $q:field || ":" || $q:query || "^" || $q:field-boost, 
-                map { "leading-wildcard": "yes", "filter-rewrite": "yes" }
+                map { "leading-wildcard": "yes", "filter-rewrite": "yes", "fields": ("frequencyScore")  }
         )]
 let $items := for $item in $items 
-order by ft:score($item) descending
-return   util:expand($item) ! functx:add-attributes($item, (xs:QName("n")), ft:score($item))
+let $frequencyScore := ft:field($item, "frequencyScore", "xs:integer")
+let $score := ft:score($item) * $frequencyScore
+order by ($score) descending
+return  (<exist:score value="{$score}" 
+                score="{ft:score($item)}" 
+                frequencyScore="{$frequencyScore}" 
+                ref="#{$item/@xml:id}" />, 
+        util:expand($item)
+)
 
 return <body xmlns="http://www.tei-c.org/ns/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:exist="http://exist.sourceforge.net/NS/exist">{($query, $items)}</body>

@@ -49,6 +49,7 @@
     <field name="lemma" expression="nav:get-metadata(., 'lemma')" />
     <field name="headword" expression="nav:get-metadata(., 'headword')" />
     <field name="definition" expression="nav:get-metadata(., 'definition')" />
+    <field name="frequencyScore" expression="nav:get-metadata(., 'frequencyScore')" />
     <field name="example" expression="nav:get-metadata(., 'example')"/>
     <field name="translation" expression="nav:get-metadata(., 'translation')"/>
     <field name="domain" expression="nav:get-metadata(., 'domain')" />

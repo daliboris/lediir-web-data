@@ -26,7 +26,7 @@ $element/@*,
 $element/node() }
 };
 
-let $query := <exist:query field="{$q:field}" query="{$q:query}" boost="{$q:field-boost}" />
+let $query := <exist:query field="{$q:field}" query="{$q:query}" boost="{$q:field-boost}" sort="score + frequencyScore" />
 
 
 let $items := collection($q:collection)//tei:entry[

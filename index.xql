@@ -6,6 +6,7 @@ declare namespace array = "http://www.w3.org/2005/xpath-functions/array";
 declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
 
 
+
 declare namespace tei="http://www.tei-c.org/ns/1.0";
 declare namespace dbk="http://docbook.org/ns/docbook";
 
@@ -17,11 +18,14 @@ declare function functx:substring-before-last
 
    if (contains($arg, $delim))
    then replace($arg,
-            concat('^(.*)', $delim,'.*'), '$1')
+            concat('^(.*)', replace($delim, '\s', '\\s'),'.*'),
+             '$1')
    else ''
  } ;
 
- declare variable $idx:frequency-number := map {
+declare variable $idx:parentheses-todo := "keep"; (: "move" | "remove" |  "keep" :)
+
+declare variable $idx:frequency-boost := map {
     'A' : 50,
     'B' : 40,
     'C' : 30,
@@ -29,6 +33,25 @@ declare function functx:substring-before-last
     'E' : 10,
     'R' : 1,
     'X' : 1
+ };
+
+declare variable $idx:sense-boost := map {
+  1 : 10,
+  2 : 5,
+  3 : 1
+ };
+
+ declare function idx:get-frequency-boost($frequency) {
+    if(exists($frequency)) then 
+        if (map:contains($idx:frequency-boost, $frequency)) then    
+         map:get($idx:frequency-boost, $frequency)
+          else 1
+        else 1
+ };
+
+
+ declare function idx:get-sense-boost($position as xs:integer) {
+    if(map:contains($idx:sense-boost, $position)) then $idx:sense-boost?($position) else 1
  };
 
 declare variable $idx:app-root :=
@@ -67,31 +90,64 @@ declare variable $idx:taxonomies :=
     else map {}
   ;
 
-declare function idx:concatenate-emulated-text ($text as xs:string, $previous-text as xs:string) as xs:string {
+declare variable $idx:parentheses-only := '\(([^()]+)\)';
+declare variable $idx:parentheses-regex := "^\([^()]*\)$|^\([^()]*$|^[^()]*\)$";
+declare variable $idx:tokenizer-regex := "\p{Po}?\s";
+
+
+declare function idx:move-parentheses-to-end($input as xs:string) as xs:string {
+    let $analysys := analyze-string($input, $idx:parentheses-only)
+    return string-join(($analysys//fn:non-match, $analysys//fn:match), ' ')  => normalize-space()
+};
+
+declare function idx:remove-parentheses($text as xs:string) as xs:string {
+  let $tokens := tokenize($text, $idx:tokenizer-regex)
+  let $tokens := $tokens[not(matches(., $idx:parentheses-regex))]
+  return string-join($tokens, " ")
+};
+
+declare function idx:process-parentheses($text as xs:string, $todo as xs:string) as xs:string {
+if(contains($text, '(')) then
+  switch($todo)
+          case "remove"
+              return idx:remove-parentheses($text)
+          case "move"
+              return idx:move-parentheses-to-end($text)
+          default
+              return $text
+         else $text
+};
+declare function idx:process-parentheses($text as xs:string) as xs:string {
+    idx:process-parentheses($text, $idx:parentheses-todo)
+};
+
+declare function idx:concatenate-emulated-text ($text as xs:string, $previous as xs:string*) as xs:string* {
+
   let $before := functx:substring-before-last($text, " ")
-  
   return
   if ($before = "") then
-     $previous-text || "&#xa;" || $text
+     ($previous,  $text)
   else
-    idx:concatenate-emulated-text($before, $previous-text || "&#xa;" || $text)
+    idx:concatenate-emulated-text($before, ($previous, $text))
 };
 
 declare function idx:emulate-payload ($text as xs:string, $sense-boost as xs:integer, $frequency as xs:integer) as xs:string 
 { 
-  let $tokens := tokenize($text)
-  let $result := idx:concatenate-emulated-text($text, "")
-  let $result := if($sense-boost <= 1) then $result
+  let $clean := idx:process-parentheses($text)
+  let $emulated := idx:concatenate-emulated-text($clean, ())
+  let $emulated := if($sense-boost <= 1) then $emulated
     else
-    for $i in (1 to $sense-boost)
-    return $result
-(:
-  let $result := if($frequency <= 1) then $result
-    else
-    for $i in (1 to $frequency)
-    return $result
-:)
+      for $i in (1 to $sense-boost)
+        return $emulated
+  let $result := if($idx:parentheses-todo = "remove")
+     then ($emulated, idx:process-parentheses($text, "move"))
+    else $emulated
+  let $result := for $item in $result
+    order by string-length($item)
+    return $item 
+
   return string-join($result, "&#xa;")
+
  };
 
 (:~
@@ -169,7 +225,7 @@ declare function idx:get-definition-index($entry as element()) {
     
     for $sense at $i in $entry//tei:sense
         let $text := $sense//tei:def/normalize-space()
-        let $sense-boost := if($i = 1) then 3 else if($i = 2) then 2 else 1
+        let $sense-boost := idx:get-sense-boost($i)
         return if(exists($text)) then
              idx:emulate-payload($text, $sense-boost, 1)
              else ()
@@ -177,11 +233,7 @@ declare function idx:get-definition-index($entry as element()) {
 
 declare function idx:get-frequency-score($entry as element()) { 
 let $frequency := $entry/tei:usg[@type='frequency'][1]/@value/tokenize(., '-')[1] ! substring(., 2)
-    let $frequency := if(exists($frequency)) then 
-        if (map:contains($idx:frequency-number, $frequency)) then    
-         map:get($idx:frequency-number, $frequency)
-          else 1
-        else 1
+    let $frequency := idx:get-frequency-boost($frequency)
     return $frequency
 };
 

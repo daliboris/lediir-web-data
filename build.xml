@@ -1,5 +1,5 @@
 <project name="lediir" default="xar">
-    <property name="data.version" value="3" />
+    <property name="data.version" value="5" />
     <xmlproperty file="expath-pkg.xml" /> <!-- Adjust path below to match location of your npm binary -->
     <property name="project.version" value="${package(version)}" />
     <property name="project.app" value="${package(abbrev)}" />

@@ -15,7 +15,8 @@ declare variable $q:max-items external := 20;
 declare variable $q:field-boost external := 1;
 
 
-declare variable $idx:parentheses-todo := "keep"; (: "remove" | "move" | "keep" :)
+declare variable $idx:parentheses-todo := "remove"; (: "remove" | "move" | "keep" :)
+declare variable $idx:payload-todo := true();
 
 
 declare variable $idx:frequency-boost := map {
@@ -56,32 +57,35 @@ let $maps-to-text := function($k, $v) {concat($k, ' ~ ', $v)}
 
 let $text-in-parentheses := switch($idx:parentheses-todo)
         case "remove"
-               return "odstraněn"
+               return "odstraněno"
         case "move"
-               return "přesunut na konec"
+               return "přesunuto na konec"
         default
                return "beze změn"
 
-let $preprocessing := concat( "text v závorkách (kontextové poznámky) ", $text-in-parentheses, "; ")
+let $preprocessing := if($idx:payload-todo) then "přihlížet k pozici ve významu" || "|" else "bez ohledu na pozici ve významu" || "|"
+let $preprocessing := $preprocessing || "text v závorkách (kontextové poznámky): " ||  $text-in-parentheses || "|"
 
-let $preprocessing := $preprocessing || "posílení frekvence: " || string-join(map:for-each($idx:frequency-boost, $maps-to-text), " => ") || "; "
-let $preprocessing := $preprocessing || "posílení čísla významu: " || string-join(map:for-each($idx:sense-boost, $maps-to-text), " => ")
+let $preprocessing := $preprocessing || "posílení frekvence: " || string-join(map:for-each($idx:frequency-boost, $maps-to-text), " ↣ ") || "|"
+let $preprocessing := $preprocessing || "posílení čísla významu: " || string-join(map:for-each($idx:sense-boost, $maps-to-text), " ↣ ") || "|"
 
-let $query := <exist:query field="{$q:field}" query="{$q:query}" boost="{$q:field-boost}" sort="score * frequencyScore" preprocessing="{$preprocessing}" />
+let $query := <exist:query field="{$q:field}" query="{$q:query}" boost="{$q:field-boost}" sort="score * frequencyScore * senseScore" preprocessing="{$preprocessing}" />
 
 
-let $items := collection($q:collection)//tei:entry[
+let $items := collection($q:collection)//tei:entry[tei:sense[
         ft:query(
                 ., $q:field || ":" || $q:query || "^" || $q:field-boost, 
                 map { "leading-wildcard": "yes", "filter-rewrite": "yes", "fields": ("frequencyScore")  }
-        )]
+        )]]
 let $items := for $item in $items 
 let $frequencyScore := ft:field($item, "frequencyScore", "xs:integer")
+let $senseScore := ft:field($item, "senseScore", "xs:integer")
 let $score := ft:score($item) * $frequencyScore
 order by ($score) descending
 return  (<exist:score value="{$score}" 
                 score="{ft:score($item)}" 
                 frequencyScore="{$frequencyScore}" 
+                senseScore="{$senseScore}" 
                 ref="#{$item/@xml:id}" />, 
         util:expand($item)
 )

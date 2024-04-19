@@ -148,7 +148,7 @@ declare function idx:emulate-payload ($text as xs:string, $sense-boost as xs:int
       else
         for $i in (1 to $sense-boost)
           return $emulated
-    let $result := if($idx:parentheses-todo = "remove" and $clean != $text)
+    let $result := if($idx:parentheses-todo = "move" and $clean != $text)
        then ($emulated, idx:process-parentheses($text, "move"))
       else $emulated
     let $result := for $item in $result

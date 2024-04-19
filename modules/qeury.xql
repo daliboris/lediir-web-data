@@ -18,7 +18,6 @@ declare variable $q:field-boost external := 1;
 declare variable $idx:parentheses-todo := "remove"; (: "remove" | "move" | "keep" :)
 declare variable $idx:payload-todo := true();
 
-
 declare variable $idx:frequency-boost := map {
     'A' : 50,
     'B' : 40,
@@ -80,7 +79,7 @@ let $items := collection($q:collection)//tei:entry[tei:sense[
 let $items := for $item in $items 
 let $frequencyScore := ft:field($item, "frequencyScore", "xs:integer")
 let $senseScore := ft:field($item, "senseScore", "xs:integer")
-let $score := ft:score($item) * $frequencyScore
+let $score := ft:score($item) * $frequencyScore * $senseScore
 order by ($score) descending
 return  (<exist:score value="{$score}" 
                 score="{ft:score($item)}" 

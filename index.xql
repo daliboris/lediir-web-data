@@ -23,7 +23,8 @@ declare function functx:substring-before-last
    else ''
  } ;
 
-declare variable $idx:parentheses-todo := "keep"; (: "move" | "remove" |  "keep" :)
+declare variable $idx:parentheses-todo := "remove"; (: "remove" | "move" | "keep" :)
+declare variable $idx:payload-todo := true();
 
 declare variable $idx:frequency-boost := map {
     'A' : 50,
@@ -52,6 +53,12 @@ declare variable $idx:sense-boost := map {
 
  declare function idx:get-sense-boost($position as xs:integer) {
     if(map:contains($idx:sense-boost, $position)) then $idx:sense-boost?($position) else 1
+ };
+ 
+ declare function idx:get-sense-boost($position as xs:integer, $all-senses as xs:integer) {
+  let $result :=
+    if(map:contains($idx:sense-boost, $position)) then $idx:sense-boost?($position) else 1
+  return if($all-senses = 1) then $result * 5 else $result
  };
 
 declare variable $idx:app-root :=
@@ -121,7 +128,7 @@ declare function idx:process-parentheses($text as xs:string) as xs:string {
     idx:process-parentheses($text, $idx:parentheses-todo)
 };
 
-declare function idx:concatenate-emulated-text ($text as xs:string, $previous as xs:string*) as xs:string* {
+declare function idx:concatenate-emulated-text($text as xs:string, $previous as xs:string*) as xs:string* {
 
   let $before := functx:substring-before-last($text, " ")
   return
@@ -134,19 +141,23 @@ declare function idx:concatenate-emulated-text ($text as xs:string, $previous as
 declare function idx:emulate-payload ($text as xs:string, $sense-boost as xs:integer, $frequency as xs:integer) as xs:string 
 { 
   let $clean := idx:process-parentheses($text)
-  let $emulated := idx:concatenate-emulated-text($clean, ())
-  let $emulated := if($sense-boost <= 1) then $emulated
-    else
-      for $i in (1 to $sense-boost)
-        return $emulated
-  let $result := if($idx:parentheses-todo = "remove")
-     then ($emulated, idx:process-parentheses($text, "move"))
-    else $emulated
-  let $result := for $item in $result
-    order by string-length($item)
-    return $item 
-
-  return string-join($result, "&#xa;")
+  
+  return if($idx:payload-todo) then
+    let $emulated := idx:concatenate-emulated-text($clean, ())
+    let $emulated := if($sense-boost <= 1) then $emulated
+      else
+        for $i in (1 to $sense-boost)
+          return $emulated
+    let $result := if($idx:parentheses-todo = "remove" and $clean != $text)
+       then ($emulated, idx:process-parentheses($text, "move"))
+      else $emulated
+    let $result := for $item in $result
+      order by string-length($item)
+      return $item 
+  
+    return string-join($result, "&#xa;")
+  else
+    $clean
 
  };
 
@@ -157,7 +168,10 @@ declare function idx:emulate-payload ($text as xs:string, $sense-boost as xs:int
  :)
 declare function idx:get-metadata($root as element(), $field as xs:string) {
     let $header := $root/tei:teiHeader
-    return
+    return if($root instance of element(tei:sense)) then
+      idx:get-sense-metadata($root, $field)
+    else
+    
         switch ($field)
             case "title" return
                 string-join((
@@ -219,6 +233,27 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "complexFormType" return idx:get-complex-form-type($root)
             default return
                 ()
+};
+
+declare function idx:get-sense-metadata($root as element(), $field as xs:string) {
+  let $entry := $root/ancestor::tei:entry
+  let $sense-number := count($root/preceding-sibling::tei:sense) + 1
+  let $all-senses := count($entry//tei:sense)
+  return
+  switch ($field)
+    case "definition" return idx:get-definition-index($root, 0)
+    case "senseScore" return idx:get-sense-boost($sense-number, $all-senses)
+    case "frequencyScore" return idx:get-frequency-score($entry)
+    default 
+      return ()
+};
+
+declare function idx:get-definition-index($sense as element(), $position as xs:integer) {
+  let $text := $sense//tei:def/normalize-space()
+  let $sense-boost := idx:get-sense-boost($position)
+        return if(exists($text)) then
+             idx:emulate-payload($text, $sense-boost, 1)
+             else ()
 };
 
 declare function idx:get-definition-index($entry as element()) { 

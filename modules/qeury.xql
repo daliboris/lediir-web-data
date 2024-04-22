@@ -9,8 +9,8 @@ declare namespace exist = "http://exist.sourceforge.net/NS/exist";
 
 
 declare variable $q:collection external := "/db/apps/lediir-data/data/dictionaries";
-declare variable $q:query external := "cesty";
-declare variable $q:field external := "definition";
+declare variable $q:query external := "síla";
+declare variable $q:field external := "equivalent";
 declare variable $q:max-items external := 20;
 declare variable $q:field-boost external := 1;
 
@@ -29,11 +29,18 @@ declare variable $idx:frequency-boost := map {
  };
 
 declare variable $idx:sense-boost := map {
-  1 : 10,
-  2 : 5,
+  1 : 5,
+  2 : 3,
   3 : 1
  };
 
+ declare variable $idx:equivalent-boost := map {
+  1 : 5,
+  2 : 3,
+  3 : 1
+ };
+
+declare variable $idx:sense-uniqueness-max := 5;
  
 declare function functx:add-attributes
         ( $elements as element()*,
@@ -67,24 +74,37 @@ let $preprocessing := $preprocessing || "text v závorkách (kontextové poznám
 
 let $preprocessing := $preprocessing || "posílení frekvence: " || string-join(map:for-each($idx:frequency-boost, $maps-to-text), " ↣ ") || "|"
 let $preprocessing := $preprocessing || "posílení čísla významu: " || string-join(map:for-each($idx:sense-boost, $maps-to-text), " ↣ ") || "|"
+let $preprocessing := $preprocessing || "jedinečnost významu: " || "od 1 do " || $idx:sense-uniqueness-max || "|"
+let $preprocessing := $preprocessing || "posílení pozice ekvivalentu: " || string-join(map:for-each($idx:equivalent-boost, $maps-to-text), " ↣ ") || "|"
+let $preprocessing := $preprocessing || "řazení podle skóre sestupně, v případě shody podle abecedy vzestupně"
 
-let $query := <exist:query field="{$q:field}" query="{$q:query}" boost="{$q:field-boost}" sort="score * frequencyScore * senseScore" preprocessing="{$preprocessing}" />
+let $query := <exist:query field="{$q:field}" query="{$q:query}" 
+        boost="{$q:field-boost}" sort="score * corpusFrequencyBoost * sensePositionBoost * senseUniquenessBoost * equivalentPositionBoost" 
+        preprocessing="{$preprocessing}" />
 
 
-let $items := collection($q:collection)//tei:entry[tei:sense[
+let $items := collection($q:collection)//tei:entry[tei:sense/tei:def/tei:seg[
         ft:query(
                 ., $q:field || ":" || $q:query || "^" || $q:field-boost, 
-                map { "leading-wildcard": "yes", "filter-rewrite": "yes", "fields": ("frequencyScore")  }
+                map { "leading-wildcard": "yes", "filter-rewrite": "yes", 
+                "fields": ("equivalentPositionBoost", "corpusFrequencyBoost", 
+                "sensePositionBoost", "senseUniquenessBoost", "sortKey")  }
         )]]
 let $items := for $item in $items 
-let $frequencyScore := ft:field($item, "frequencyScore", "xs:integer")
-let $senseScore := ft:field($item, "senseScore", "xs:integer")
-let $score := ft:score($item) * $frequencyScore * $senseScore
-order by ($score) descending
+let $sortKey := ft:field($item, "sortKey")
+let $equivalentPositionBoost := ft:field($item, "equivalentPositionBoost", "xs:double")
+let $corpusFrequencyBoost := ft:field($item, "corpusFrequencyBoost", "xs:double")
+let $sensePositionBoost := ft:field($item, "sensePositionBoost", "xs:double")
+let $senseUniquenessBoost := ft:field($item, "senseUniquenessBoost", "xs:double")
+let $score := ft:score($item) * $equivalentPositionBoost * $corpusFrequencyBoost
+        * $sensePositionBoost * $senseUniquenessBoost
+order by $score  descending, $sortKey ascending
 return  (<exist:score value="{$score}" 
                 score="{ft:score($item)}" 
-                frequencyScore="{$frequencyScore}" 
-                senseScore="{$senseScore}" 
+                equivalentPositionBoost = "{$equivalentPositionBoost}"
+                corpusFrequencyBoost="{$corpusFrequencyBoost}" 
+                sensePositionBoost="{$sensePositionBoost}" 
+                senseUniquenessBoost="{$senseUniquenessBoost}" 
                 ref="#{$item/@xml:id}" />, 
         util:expand($item)
 )

@@ -37,12 +37,20 @@ declare variable $idx:frequency-boost := map {
  };
 
 declare variable $idx:sense-boost := map {
-  1 : 10,
-  2 : 5,
+  1 : 5,
+  2 : 3,
   3 : 1
  };
 
- declare function idx:get-frequency-boost($frequency) {
+ declare variable $idx:equivalent-boost := map {
+  1 : 5,
+  2 : 3,
+  3 : 1
+ };
+
+declare variable $idx:sense-uniqueness-max := 5;
+
+ declare function idx:get-frequency-boost-number($frequency) {
     if(exists($frequency)) then 
         if (map:contains($idx:frequency-boost, $frequency)) then    
          map:get($idx:frequency-boost, $frequency)
@@ -50,15 +58,27 @@ declare variable $idx:sense-boost := map {
         else 1
  };
 
+declare function idx:get-sense-uniqueness-boost($position as xs:integer, $sense-count as xs:integer) as xs:double {
+    if($position = 1) then 
+        $idx:sense-uniqueness-max
+    else if($position ge $sense-count) then
+        1
+    else
+        $idx:sense-uniqueness-max - (($idx:sense-uniqueness-max div $sense-count ) * ($position - 1))
+};
 
- declare function idx:get-sense-boost($position as xs:integer) {
+declare function idx:get-equivalent-position-boost($position as xs:integer) as xs:double {
+    if(map:contains($idx:equivalent-boost, $position)) then $idx:equivalent-boost?($position) else 1
+ };
+
+ declare function idx:get-sense-boost($position as xs:integer) as xs:double {
     if(map:contains($idx:sense-boost, $position)) then $idx:sense-boost?($position) else 1
  };
  
- declare function idx:get-sense-boost($position as xs:integer, $all-senses as xs:integer) {
+ declare function idx:get-sense-boost($position as xs:integer, $all-senses as xs:integer) as xs:double {
   let $result :=
     if(map:contains($idx:sense-boost, $position)) then $idx:sense-boost?($position) else 1
-  return if($all-senses = 1) then $result * 5 else $result
+  return $result (: if($all-senses = 1) then $result * 5 else $result :)
  };
 
 declare variable $idx:app-root :=
@@ -170,6 +190,8 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
     let $header := $root/tei:teiHeader
     return if($root instance of element(tei:sense)) then
       idx:get-sense-metadata($root, $field)
+    else if($root instance of element(tei:seg)) then
+       idx:get-seg-metadata($root, $field)
     else
     
         switch ($field)
@@ -228,22 +250,49 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "category-idno" return $root/tei:idno
             case "category-term" return $root/tei:term
             case "polysemy" return count($root[not(parent::tei:entry)]//tei:sense)
-            case "frequencyScore" return idx:get-frequency-score($root)
+            case "frequencyScore" return idx:get-frequency-boost($root)
             case "frequency" return $root//tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
             case "complexFormType" return idx:get-complex-form-type($root)
             default return
                 ()
 };
 
+declare function idx:get-seg-metadata($root as element(), $field as xs:string) {
+
+    let $entry := $root/ancestor::tei:entry
+    let $sense := $root/ancestor::tei:sense
+    let $sense-position := count($sense/preceding-sibling::tei:sense) + 1
+    let $sense-count := count($entry//tei:sense)
+
+    return
+      switch ($field)
+          case "equivalent"
+              return $root/text()/normalize-space()[. != '']
+          case "equivalentPositionBoost"
+              return idx:get-equivalent-position-boost(xs:integer($root/@n))
+          case "corpusFrequencyBoost"
+              return idx:get-frequency-boost($entry)
+          case "sensePositionBoost"
+                return
+                    idx:get-sense-boost($sense-position, $sense-count)
+          case "senseUniquenessBoost"
+              return idx:get-sense-uniqueness-boost($sense-position, $sense-count)
+          case "sortKey" 
+                return idx:get-sortKey($entry)
+          default 
+              return ()
+    
+};
+
 declare function idx:get-sense-metadata($root as element(), $field as xs:string) {
   let $entry := $root/ancestor::tei:entry
-  let $sense-number := count($root/preceding-sibling::tei:sense) + 1
+  let $sense-number := $root/count(preceding-sibling::tei:sense) + 1
   let $all-senses := count($entry//tei:sense)
   return
   switch ($field)
     case "definition" return idx:get-definition-index($root, 0)
     case "senseScore" return idx:get-sense-boost($sense-number, $all-senses)
-    case "frequencyScore" return idx:get-frequency-score($entry)
+    case "frequencyScore" return idx:get-frequency-boost($entry)
     default 
       return ()
 };
@@ -266,9 +315,9 @@ declare function idx:get-definition-index($entry as element()) {
              else ()
 };
 
-declare function idx:get-frequency-score($entry as element()) { 
+declare function idx:get-frequency-boost($entry as element()) { 
 let $frequency := $entry/tei:usg[@type='frequency'][1]/@value/tokenize(., '-')[1] ! substring(., 2)
-    let $frequency := idx:get-frequency-boost($frequency)
+    let $frequency := idx:get-frequency-boost-number($frequency)
     return $frequency
 };
 

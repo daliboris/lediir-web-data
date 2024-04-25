@@ -70,38 +70,6 @@
     <facet dimension="frequency" expression="nav:get-metadata(., 'frequency')"/>
     <facet dimension="complexFormType" expression="nav:get-metadata(., 'complexFormType')"/>
    </text>
-   <text qname="tei:sense">
-    <field name="entry" expression="nav:get-metadata(., 'entry')"/>
-    <field name="sortKey" expression="nav:get-metadata(., 'sortKey')"/>
-    <field name="sortKeyWithFrequency" expression="nav:get-metadata(., 'sortKeyWithFrequency')"/>
-    <field name="letter" expression="nav:get-metadata(., 'letter')"/>
-    <field name="chapterId" expression="nav:get-metadata(., 'chapterId')"/>
-    <field name="chapter" expression="nav:get-metadata(., 'chapter')"/>
-    <field name="lemma" expression="nav:get-metadata(., 'lemma')" />
-    <field name="headword" expression="nav:get-metadata(., 'headword')" />
-    <field name="definition" expression="nav:get-metadata(., 'definition')" />
-    <field name="frequencyScore" expression="nav:get-metadata(., 'frequencyScore')" />
-    <field name="example" expression="nav:get-metadata(., 'example')"/>
-    <field name="translation" expression="nav:get-metadata(., 'translation')"/>
-    <field name="domain" expression="nav:get-metadata(., 'domain')" />
-    <field name="reversal" expression="nav:get-metadata(., 'reversal')" />
-    <field name="partOfSpeechAll" expression="nav:get-metadata(., 'partOfSpeechAll')"/>
-    <field name="senseScore" expression="nav:get-metadata(., 'senseScore')" />
-    <field name="styleAll" expression="nav:get-metadata(., 'styleAll')"/>
-    <field name="pronunciation" expression="nav:get-metadata(., 'pronunciation')"/>
-    <field name="complexForm" expression="nav:get-metadata(., 'complexForm')"/>
-    <facet dimension="dictionary" expression="nav:get-metadata(ancestor::tei:TEI, 'title[@type=main|full]-content')"/>
-    <facet dimension="letter" expression="nav:get-metadata(., 'letter')"/>
-    <facet dimension="objectLanguage" expression="nav:get-metadata(., 'object-language')"/>
-    <facet dimension="targetLanguage" expression="nav:get-metadata(., 'target-language')"/>
-    <facet dimension="partOfSpeech" expression="nav:get-metadata(., 'partOfSpeech')"/>¨
-    <facet dimension="domain" expression="nav:get-metadata(., 'domain')" />
-    <facet dimension="domainHierarchy" expression="nav:get-metadata(., 'domainHierarchy')" hierarchical="yes" />
-    <facet dimension="style" expression="nav:get-metadata(., 'style')" />
-    <facet dimension="polysemy" expression="nav:get-metadata(., 'polysemy')"/>
-    <facet dimension="frequency" expression="nav:get-metadata(., 'frequency')"/>
-    <facet dimension="complexFormType" expression="nav:get-metadata(., 'complexFormType')"/>
-   </text>
    <text qname="tei:seg">
     <ignore qname="tei:gloss"/>
     <field name="equivalent" expression="nav:get-metadata(., 'equivalent')"/>

@@ -9,7 +9,22 @@
     </target>
     <target name="xar">
         <mkdir dir="${build.dir}" />
-        <zip basedir="." destfile="${build.dir}/${project.app}-${project.version}.xar" excludes="${build.dir} ${build.dir}/* *.build.properties build.properties .existdb.json *.xstrc .gitignore *.code-workspace" />
+        <zip destfile="${build.dir}/${project.app}-${project.version}.xar">
+            <fileset dir=".">
+                <exclude name="${build.dir}" />
+                <exclude name="${build.dir}/**" />
+                <exclude name="*.build.properties" />
+                <exclude name=".github/**" />
+                <exclude name=".vs/**" />
+                <exclude name=".vscode/**" />
+                <exclude name="build.properties" />
+                <exclude name=".existdb.json" />
+                <exclude name="*.xstrc" />
+                <exclude name=".gitignore" />
+                <exclude name="*.code-workspace" />
+                <exclude name="local.*" />
+            </fileset>
+        </zip>
         <copy file="${build.dir}/${project.app}-${project.version}.xar" overwrite="true" tofile="${build.dir}/${project.app}.xar"/>
     </target>
     <target name="xar-complete" depends="clean,xar" />

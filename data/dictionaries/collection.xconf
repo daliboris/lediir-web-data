@@ -49,6 +49,7 @@
     <field name="lemma" expression="nav:get-metadata(., 'lemma')" />
     <field name="headword" expression="nav:get-metadata(., 'headword')" />
     <field name="definition" expression="nav:get-metadata(., 'definition')" />
+    <field name="frequencyScore" expression="nav:get-metadata(., 'frequencyScore')" />
     <field name="example" expression="nav:get-metadata(., 'example')"/>
     <field name="translation" expression="nav:get-metadata(., 'translation')"/>
     <field name="domain" expression="nav:get-metadata(., 'domain')" />
@@ -68,6 +69,15 @@
     <facet dimension="polysemy" expression="nav:get-metadata(., 'polysemy')"/>
     <facet dimension="frequency" expression="nav:get-metadata(., 'frequency')"/>
     <facet dimension="complexFormType" expression="nav:get-metadata(., 'complexFormType')"/>
+   </text>
+   <text qname="tei:seg">
+    <ignore qname="tei:gloss"/>
+    <field name="equivalent" expression="nav:get-metadata(., 'equivalent')"/>
+    <field name="equivalentPositionBoost" expression="nav:get-metadata(., 'equivalentPositionBoost')" type="xs:double"/>
+    <field name="corpusFrequencyBoost" expression="nav:get-metadata(., 'corpusFrequencyBoost')" type="xs:double"/>
+    <field name="sensePositionBoost" expression="nav:get-metadata(., 'sensePositionBoost')" type="xs:double"/>
+    <field name="senseUniquenessBoost" expression="nav:get-metadata(., 'senseUniquenessBoost')" type="xs:double"/>
+    <field name="sortKey" expression="nav:get-metadata(., 'sortKey')"/>
    </text>
    <text qname="tei:head"/>
    <text match="//tei:titleStmt/tei:title"/>

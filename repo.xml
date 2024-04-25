@@ -1,4 +1,4 @@
-<meta xmlns="http://exist-db.org/xquery/repo">
+<?xml version="1.0" encoding="UTF-8"?><meta xmlns="http://exist-db.org/xquery/repo">
     <description>Elektronická lexikální databáze indoíránských jazyků: data</description>
     <author>Boris Lehečka</author>
     <website>https://eldi.soc.cas.cz/</website>
@@ -9,8 +9,8 @@
     <prepare>pre-install.xql</prepare>
     <finish>post-install.xql</finish>
     <target>lediir-data</target>
-    <permissions user="redaktor" group="tei" mode="rw-r--r--" />
-    <deployed />
+    <permissions user="redaktor" group="tei" mode="rw-r--r--"/>
+    <deployed/>
     <changelog>
         <change version="0.7.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
@@ -32,7 +32,7 @@
                 <li>úprava obsah <b>build.xml</b> pro potřeby datového repozitáře</li>
             </ul>
         </change>
-    <change version="0.4.0">
+        <change version="0.4.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
                 <li>index kompletnch hesel pro komplexní hesla</li>
             </ul>

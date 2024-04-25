@@ -6,8 +6,80 @@ declare namespace array = "http://www.w3.org/2005/xpath-functions/array";
 declare namespace map = "http://www.w3.org/2005/xpath-functions/map";
 
 
+
 declare namespace tei="http://www.tei-c.org/ns/1.0";
 declare namespace dbk="http://docbook.org/ns/docbook";
+
+declare namespace functx = "http://www.functx.com";
+
+
+declare function functx:substring-before-last
+  ( $arg as xs:string? , $delim as xs:string )  as xs:string {
+
+   if (contains($arg, $delim))
+   then replace($arg,
+            concat('^(.*)', replace($delim, '\s', '\\s'),'.*'),
+             '$1')
+   else ''
+ } ;
+
+declare variable $idx:parentheses-todo := "remove"; (: "remove" | "move" | "keep" :)
+declare variable $idx:payload-todo := true();
+
+declare variable $idx:frequency-boost := map {
+    'A' : 50,
+    'B' : 40,
+    'C' : 30,
+    'D' : 20,
+    'E' : 10,
+    'R' : 1,
+    'X' : 1
+ };
+
+declare variable $idx:sense-boost := map {
+  1 : 5,
+  2 : 3,
+  3 : 1
+ };
+
+ declare variable $idx:equivalent-boost := map {
+  1 : 5,
+  2 : 3,
+  3 : 1
+ };
+
+declare variable $idx:sense-uniqueness-max := 5;
+
+ declare function idx:get-frequency-boost-number($frequency) {
+    if(exists($frequency)) then 
+        if (map:contains($idx:frequency-boost, $frequency)) then    
+         map:get($idx:frequency-boost, $frequency)
+          else 1
+        else 1
+ };
+
+declare function idx:get-sense-uniqueness-boost($position as xs:integer, $sense-count as xs:integer) as xs:double {
+    if($position = 1) then 
+        $idx:sense-uniqueness-max
+    else if($position ge $sense-count) then
+        1
+    else
+        $idx:sense-uniqueness-max - (($idx:sense-uniqueness-max div $sense-count ) * ($position - 1))
+};
+
+declare function idx:get-equivalent-position-boost($position as xs:integer) as xs:double {
+    if(map:contains($idx:equivalent-boost, $position)) then $idx:equivalent-boost?($position) else 1
+ };
+
+ declare function idx:get-sense-boost($position as xs:integer) as xs:double {
+    if(map:contains($idx:sense-boost, $position)) then $idx:sense-boost?($position) else 1
+ };
+ 
+ declare function idx:get-sense-boost($position as xs:integer, $all-senses as xs:integer) as xs:double {
+  let $result :=
+    if(map:contains($idx:sense-boost, $position)) then $idx:sense-boost?($position) else 1
+  return $result (: if($all-senses = 1) then $result * 5 else $result :)
+ };
 
 declare variable $idx:app-root :=
     let $rawPath := system:get-module-load-path()
@@ -24,6 +96,7 @@ declare variable $idx:app-root :=
 declare variable $idx:taxonomy-root := doc($idx:app-root || "/data/about/LeDIIR-FACS-about.xml");
 
 declare variable $idx:taxonomies := 
+    if(exists($idx:taxonomy-root)) then
     let $categories := $idx:taxonomy-root//tei:teiHeader//tei:taxonomy[@xml:id != 'LeDIIR.taxonomy']
     return map:merge( for $category in $categories//tei:category
         let $terms := map:merge(for $desc in $category/tei:catDesc return 
@@ -41,19 +114,72 @@ declare variable $idx:taxonomies :=
              $terms
         }
     )
+    else map {}
   ;
 
-declare function idx:get-taxonomy($keys as xs:string*) {
-    let $inner := function($vk, $vv) {$vv}
-    let $values := function($k, $v) {
-      concat($v("id"), ' ', $v("term"))
-    }
+declare variable $idx:parentheses-only := '\(([^()]+)\)';
+declare variable $idx:parentheses-regex := "^\([^()]*\)$|^\([^()]*$|^[^()]*\)$";
+declare variable $idx:tokenizer-regex := "\p{Po}?\s";
 
-    for $key in $keys
-        let $id := substring($key, 2)
-        let $taxonomy := $idx:taxonomies($id)
-        return if(empty($taxonomy)) then () else map:for-each($taxonomy, $values)
+
+declare function idx:move-parentheses-to-end($input as xs:string) as xs:string {
+    let $analysys := analyze-string($input, $idx:parentheses-only)
+    return string-join(($analysys//fn:non-match, $analysys//fn:match), ' ')  => normalize-space()
 };
+
+declare function idx:remove-parentheses($text as xs:string) as xs:string {
+  let $tokens := tokenize($text, $idx:tokenizer-regex)
+  let $tokens := $tokens[not(matches(., $idx:parentheses-regex))]
+  return string-join($tokens, " ")
+};
+
+declare function idx:process-parentheses($text as xs:string, $todo as xs:string) as xs:string {
+if(contains($text, '(')) then
+  switch($todo)
+          case "remove"
+              return idx:remove-parentheses($text)
+          case "move"
+              return idx:move-parentheses-to-end($text)
+          default
+              return $text
+         else $text
+};
+declare function idx:process-parentheses($text as xs:string) as xs:string {
+    idx:process-parentheses($text, $idx:parentheses-todo)
+};
+
+declare function idx:concatenate-emulated-text($text as xs:string, $previous as xs:string*) as xs:string* {
+
+  let $before := functx:substring-before-last($text, " ")
+  return
+  if ($before = "") then
+     ($previous,  $text)
+  else
+    idx:concatenate-emulated-text($before, ($previous, $text))
+};
+
+declare function idx:emulate-payload ($text as xs:string, $sense-boost as xs:integer, $frequency as xs:integer) as xs:string 
+{ 
+  let $clean := idx:process-parentheses($text)
+  
+  return if($idx:payload-todo) then
+    let $emulated := idx:concatenate-emulated-text($clean, ())
+    let $emulated := if($sense-boost <= 1) then $emulated
+      else
+        for $i in (1 to $sense-boost)
+          return $emulated
+    let $result := if($idx:parentheses-todo = "move" and $clean != $text)
+       then ($emulated, idx:process-parentheses($text, "move"))
+      else $emulated
+    let $result := for $item in $result
+      order by string-length($item)
+      return $item 
+  
+    return string-join($result, "&#xa;")
+  else
+    $clean
+
+ };
 
 (:~
  : Helper function called from collection.xconf to create index fields and facets.
@@ -62,7 +188,12 @@ declare function idx:get-taxonomy($keys as xs:string*) {
  :)
 declare function idx:get-metadata($root as element(), $field as xs:string) {
     let $header := $root/tei:teiHeader
-    return
+    return if($root instance of element(tei:sense)) then
+      idx:get-sense-metadata($root, $field)
+    else if($root instance of element(tei:seg)) then
+       idx:get-seg-metadata($root, $field)
+    else
+    
         switch ($field)
             case "title" return
                 string-join((
@@ -104,7 +235,7 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "headword" return let $lemma := $root/tei:form[@type=('lemma', 'variant')] return ($lemma/tei:orth, $lemma/tei:pron, $root//tei:ref[@type='reversal'])
             case "object-language" return idx:get-object-language($root)
             case "target-language" return idx:get-target-language($root)
-            case "definition" return $root//tei:sense//tei:def/normalize-space(.)
+            case "definition" return idx:get-definition-index($root) (: $root//tei:sense//tei:def/normalize-space(.) :)
             case "example" return $root//tei:sense//tei:cit[@type='example']/tei:quote
             case "translation" return $root//tei:sense//tei:cit[@type='example']/tei:cit[@type='translation']/tei:quote
             case "partOfSpeech" return $root//tei:gram[@type='pos']
@@ -119,10 +250,75 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "category-idno" return $root/tei:idno
             case "category-term" return $root/tei:term
             case "polysemy" return count($root[not(parent::tei:entry)]//tei:sense)
+            case "frequencyScore" return idx:get-frequency-boost($root)
             case "frequency" return $root//tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
             case "complexFormType" return idx:get-complex-form-type($root)
             default return
                 ()
+};
+
+declare function idx:get-seg-metadata($root as element(), $field as xs:string) {
+
+    let $entry := $root/ancestor::tei:entry
+    let $sense := $root/ancestor::tei:sense
+    let $sense-position := count($sense/preceding-sibling::tei:sense) + 1
+    let $sense-count := count($entry//tei:sense)
+
+    return
+      switch ($field)
+          case "equivalent"
+              return $root/text()/normalize-space()[. != '']
+          case "equivalentPositionBoost"
+              return idx:get-equivalent-position-boost(xs:integer($root/@n))
+          case "corpusFrequencyBoost"
+              return idx:get-frequency-boost($entry)
+          case "sensePositionBoost"
+                return
+                    idx:get-sense-boost($sense-position, $sense-count)
+          case "senseUniquenessBoost"
+              return idx:get-sense-uniqueness-boost($sense-position, $sense-count)
+          case "sortKey" 
+                return idx:get-sortKey($entry)
+          default 
+              return ()
+    
+};
+
+declare function idx:get-sense-metadata($root as element(), $field as xs:string) {
+  let $entry := $root/ancestor::tei:entry
+  let $sense-number := $root/count(preceding-sibling::tei:sense) + 1
+  let $all-senses := count($entry//tei:sense)
+  return
+  switch ($field)
+    case "definition" return idx:get-definition-index($root, 0)
+    case "senseScore" return idx:get-sense-boost($sense-number, $all-senses)
+    case "frequencyScore" return idx:get-frequency-boost($entry)
+    default 
+      return ()
+};
+
+declare function idx:get-definition-index($sense as element(), $position as xs:integer) {
+  let $text := $sense//tei:def/normalize-space()
+  let $sense-boost := idx:get-sense-boost($position)
+        return if(exists($text)) then
+             idx:emulate-payload($text, $sense-boost, 1)
+             else ()
+};
+
+declare function idx:get-definition-index($entry as element()) { 
+    
+    for $sense at $i in $entry//tei:sense
+        let $text := $sense//tei:def/normalize-space()
+        let $sense-boost := idx:get-sense-boost($i)
+        return if(exists($text)) then
+             idx:emulate-payload($text, $sense-boost, 1)
+             else ()
+};
+
+declare function idx:get-frequency-boost($entry as element()) { 
+let $frequency := $entry/tei:usg[@type='frequency'][1]/@value/tokenize(., '-')[1] ! substring(., 2)
+    let $frequency := idx:get-frequency-boost-number($frequency)
+    return $frequency
 };
 
 declare function idx:get-entry-metadata($entry as element(), $field as xs:string) { 
@@ -162,6 +358,9 @@ declare function idx:get-frequency($entry as element()?) as xs:string? {
     $entry//tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
 };
 declare function idx:get-domain-hierarchy($entry as element()?) {
+if(not(exists($idx:taxonomy-root))) 
+then ()
+else
 if (empty($entry)) then ()
 else
 (: let $root := root($entry) :)
@@ -181,8 +380,10 @@ return if (empty($ids))
  :)
 declare function idx:get-hierarchical-descriptor($keys as xs:string*, $root as item()) {
   array:for-each (array {$keys}, function($key) {
+        if(exists(id($key,$root))) then
         id($key,$root)
         /ancestor-or-self::tei:category/tei:catDesc[@xml:lang='en']/concat(tei:idno, ' ', tei:term)
+        else ()
     })
 };
 
@@ -229,14 +430,19 @@ declare function idx:get-pos($entry as element()?) {
 declare function idx:get-values-from-terminology($entry as element()?, $targets as item()*) {
     
     (: idx:get-taxonomy($targets) :)
-    
-    for $target in $targets
-     (: let $category := id(substring($target, 2), root($entry))  :)
-     let $category := id(substring($target, 2), $idx:taxonomy-root)
-     let $description := $category/ancestor-or-self::tei:category[(parent::tei:category or parent::tei:taxonomy)]/tei:catDesc
-    return
-        ($description/tei:idno, $description/tei:term)
-    
+    if(exists($idx:taxonomy-root))
+        then    
+        for $target in $targets
+        (: let $category := id(substring($target, 2), root($entry))  :)
+        let $category := id(substring($target, 2), $idx:taxonomy-root)
+        let $description := if(exists($category)) then
+            $category/ancestor-or-self::tei:category[(parent::tei:category or parent::tei:taxonomy)]/tei:catDesc
+            else ()
+        return if(exists($description)) then
+            ($description/tei:idno, $description/tei:term)
+            else ()
+
+    else ()
 };
 
 

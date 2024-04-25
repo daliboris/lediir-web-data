@@ -1,4 +1,4 @@
-xquery version "3.0";
+xquery version "3.1";
 
 (: import module namespace config="http://www.tei-c.org/tei-simple/config" at "modules/config.xqm"; :)
 import module namespace login="http://exist-db.org/xquery/login" at "resource:org/exist/xquery/modules/persistentlogin/login.xql";
@@ -10,6 +10,8 @@ declare variable $exist:resource external;
 declare variable $exist:controller external;
 declare variable $exist:prefix external;
 declare variable $exist:root external;
+
+declare variable $local:isget := request:get-method() = ("GET","get");
 
 (:~~
  : A list of regular expressions to check which external hosts are
@@ -41,22 +43,28 @@ declare function local:checkOriginWhitelist($regexes, $origin) {
         local:checkOriginWhitelist(tail($regexes), $origin)
 };
 
-if ($exist:path eq '') then
+if ($local:isget and $exist:path eq "") then
     <dispatch xmlns="http://exist.sourceforge.net/NS/exist">
         <redirect url="{request:get-uri()}/"/>
     </dispatch>
 
 else if ($exist:path eq "/") then
-    (: forward root path to index.xql :)
+    (: forward root path to index.xql :) (: why idnex.xql ??? :)
     <dispatch xmlns="http://exist.sourceforge.net/NS/exist">
-        <redirect url="index.html"/>
+        <redirect url="api.html"/>
     </dispatch>
 
 (: static HTML page for API documentation should be served directly to make sure it is always accessible :)
-else if ($exist:path eq '/api.html') then
+else if (
+        ($local:isget and $exist:path eq "/api.html") or 
+        ($local:isget and matches($exist:path, "^/[^/]+\.json$", "s"))
+        )   then
+    <dispatch xmlns="http://exist.sourceforge.net/NS/exist" />
+    (:
     <dispatch xmlns="http://exist.sourceforge.net/NS/exist">
         <forward url="{$exist:controller}/templates/api.html"/>
     </dispatch>
+    :)
     
 (: static resources from the resources, transform, templates, odd or modules subirectories are directly returned :)
 else if (matches($exist:path, "^.*/(resources|transform|templates)/.*$")
@@ -94,8 +102,8 @@ else
             "api-odd.xql" 
         else if (matches($exist:path, "/+tex$") or matches($exist:path, "/+api/+apps/+generate$")) then
             "api-dba.xql"
-        else if(matches($exist:path, '/+upload.xql')) then
-            "upload.xql"
+        (: else if(matches($exist:path, '/+upload.xql')) then
+            "upload.xql" :)
         else 
             "api.xql"
         

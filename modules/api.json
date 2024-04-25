@@ -1,0 +1,369 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "version": "1.0.0",
+        "title": "LeDIIR Data API",
+        "description": "The API defined by the LeDIIR Data application"
+    },
+    "servers": [
+        {
+            "url": "/exist/apps/lediir-data",
+            "description": "Relative URL using the current host and port"
+        }
+    ],
+    "tags": [
+		{
+			"name": "query",
+			"description": "Route specifies query parameters"
+		},
+        {
+			"name": "body",
+			"description": "Route specifies expected body"
+		},
+		{
+			"name": "files",
+			"description": "File up- and downloads of various kinds"
+		},
+        {
+            "name": "errors",
+            "description": "Routes with custom error handling"
+        },
+        {
+			"name": "auth",
+			"description": "Authenticate, login or logout database user"
+		}
+	],
+    "security": [
+        {
+            "cookieAuth": []
+        },
+        {
+            "basicAuth": []
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "basicAuth": {
+                "type": "http",
+                "scheme": "basic"
+            },
+            "cookieAuth": {
+                "type": "apiKey",
+                "name": "eldi.soc.cas.cz.login",
+                "in": "cookie"
+            }
+        }
+    },
+    "paths": {
+        "/logout": {
+            "get": {
+                "summary": "User Logout",
+                "description": "End session of the current user",
+                "operationId": "auth:logout",
+                "tags": ["auth", "query"],
+                "parameters": [
+                    {
+                        "name": "logout",
+                        "in": "query",
+                        "description": "Set to some value to log out the current user",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "301": {
+                        "description": "Redirect with the logout parameter set.",
+                        "content": {
+                            "text/plain": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": { "description": "unauthorized" }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "summary": "User Login",
+                "description": "Start an authenticated session for the given user",
+                "tags": ["auth", "body"],
+                "operationId": "auth:login",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [ "user" ],
+                                "properties": {
+                                    "user": {
+                                        "description": "Name of the user",
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                }
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "required": [ "user" ],
+                                "properties": {
+                                    "user": {
+                                        "description": "Name of the user",
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "user": { "type": "string" },
+                                        "groups": {
+                                            "type": "array",
+                                            "items": { "type": "string" }
+                                        },
+                                        "dba": { "type": "boolean" },
+                                        "domain": { "type": "string" }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Wrong user or password"
+                    }
+                },
+                "security": [{ "cookieAuth": [] }]
+            }
+        },
+        "/upload/single/{path}": {
+            "post": {
+                "summary": "Upload a single file.",
+                "description": "In this example, the file path is part of the URL.",
+                "operationId": "upload:single",
+                "x-constraints": {
+					"groups": ["tei"]
+				},
+                "tags": ["path", "body", "files"],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["file"],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "path",
+                        "in": "path",
+                        "required": true,
+                        "schema":{ "type": "string" }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created uploaded file",
+                        "content": {
+                            "application/json": {
+                                "schema": { "type": "string" }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Content was invalid",
+                        "content": {
+                            "application/json": {
+                                "schema": { "type": "string" }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/clean/{collection}" : {
+            "delete" : {
+                "summary": "Cleans specified collection.",
+                "description": "Removes all content of the collection including collection itself.",
+                "operationId":  "upld:clean",
+                "x-constraints": {
+					"groups": ["tei"]
+				},
+                "tags": ["path",  "files"],
+                "parameters": [
+                    {
+                        "name": "collection",
+                        "in": "path",
+                        "required": true,
+                        "schema":{ "type": "string" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Colection deleted",
+                        "content": {
+                            "application/xml": {
+                                "schema": { "type": "string" }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Content was invalid",
+                        "content": {
+                            "application/xml": {
+                                "schema": { "type": "string" }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/upload/zip-to/{collection}": {
+            "post": {
+                "summary": "Upload a single zip file.",
+                "description": "In this example, the file path is part of the URL.",
+                "operationId": "upld:upload",
+                "x-constraints": {
+					"groups": ["tei"]
+				},
+                "tags": ["path", "body", "files"],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": ["file"],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "collection",
+                        "in": "path",
+                        "required": true,
+                        "schema":{ "type": "string" }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created uploaded file",
+                        "content": {
+                            "application/xml": {
+                                "schema": { "type": "string" }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Content was invalid",
+                        "content": {
+                            "application/xml": {
+                                "schema": { "type": "string" }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/report" : {
+            "get": {
+                "summary": "Report of the index values in the collection",
+                "description": "Shows values for each index defined for the collection.",
+                "operationId": "upld:report",
+                "x-constraints": {
+					"groups": ["tei"]
+				},
+                "tags": ["query"],
+                "parameters": [
+                    {
+                        "name": "collection",
+                        "in": "query",
+                        "description": "Collection for which the report will be generated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "count",
+                        "in": "query",
+                        "description": "Maximum values generated for particular index.",
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "item",
+                        "in": "query",
+                        "description": "Id of the object for which the report will be generated.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": { "description": "unauthorized" }
+                }
+            }
+        }
+    }
+}

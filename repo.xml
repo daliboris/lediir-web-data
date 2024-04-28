@@ -12,6 +12,22 @@
     <permissions user="redaktor" group="tei" mode="rw-r--r--"/>
     <deployed/>
     <changelog>
+        <change version="0.8.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>pokročilá indexace překladových ekvivalentů, včetně posílení relevance na základě
+                    <ul>
+                        <li>pozice hledaného ekvivalentu ve významu</li>
+                        <li>frekvence lemmatu v korpusu</li>
+                        <li>čísla významu</li>
+                        <li>jedinečnosti významu</li>
+                        <li>pozice ekvivalentu (mezi středníky) ve významu</li>
+                    </ul>
+                </li>
+                <li>API pro aktualizaci sobuorů v kolekcích</li>
+                <li>API pro nahrání souboru ZIP do kolekce</li>
+                <li>API pro generovaní statistik o kolekcích a indexu</li>
+            </ul>
+        </change>
         <change version="0.7.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
                 <li>nové podřízené kolekce pro <i>metadata</i> a zpětnou vazbu (<i>feedback</i>), úpravy <b>post-install.xql</b></li>

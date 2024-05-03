@@ -27,10 +27,10 @@ declare variable $idx:parentheses-todo := "remove"; (: "remove" | "move" | "keep
 declare variable $idx:payload-todo := true();
 
 declare variable $idx:frequency-boost := map {
-    'A' : 50,
-    'B' : 40,
-    'C' : 30,
-    'D' : 20,
+    'A' : 70,
+    'B' : 60,
+    'C' : 50,
+    'D' : 40,
     'E' : 10,
     'R' : 1,
     'X' : 1
@@ -38,14 +38,14 @@ declare variable $idx:frequency-boost := map {
 
 declare variable $idx:sense-boost := map {
   1 : 5,
-  2 : 3,
+  2 : 4,
   3 : 1
  };
 
  declare variable $idx:equivalent-boost := map {
   1 : 5,
-  2 : 3,
-  3 : 1
+  2 : 4,
+  3 : 3
  };
 
 declare variable $idx:sense-uniqueness-max := 5;

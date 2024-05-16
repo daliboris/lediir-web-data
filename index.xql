@@ -192,6 +192,9 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
       idx:get-sense-metadata($root, $field)
     else if($root instance of element(tei:seg)) then
        idx:get-seg-metadata($root, $field)
+    (: do not index copy of the entry, only original entries shoud be found :)
+    else if($root instance of element(tei:entry) and $root[@copyOf]) then
+        ()
     else
     
         switch ($field)

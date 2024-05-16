@@ -24,7 +24,7 @@ declare function functx:substring-before-last
  } ;
 
 declare variable $idx:parentheses-todo := "remove"; (: "remove" | "move" | "keep" :)
-declare variable $idx:payload-todo := true();
+declare variable $idx:payload-todo := false();
 
 declare variable $idx:frequency-boost := map {
     'A' : 70,
@@ -302,10 +302,10 @@ declare function idx:get-sense-metadata($root as element(), $field as xs:string)
 
 declare function idx:get-definition-index($sense as element(), $position as xs:integer) {
   let $text := $sense//tei:def/normalize-space()
-  let $sense-boost := idx:get-sense-boost($position)
-        return if(exists($text)) then
-             idx:emulate-payload($text, $sense-boost, 1)
-             else ()
+  return if(exists($text)) then
+      let $sense-boost := idx:get-sense-boost($position)
+      return idx:emulate-payload($text, $sense-boost, 1)
+      else ()
 };
 
 declare function idx:get-definition-index($entry as element()) { 

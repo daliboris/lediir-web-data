@@ -12,6 +12,14 @@
     <permissions user="redaktor" group="tei" mode="rw-r--r--"/>
     <deployed/>
     <changelog>
+        <change version="0.9.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>indexace obsahu pouze originálních heslových statí, nikoli jejich kopií</li>
+                <li>při indexaci se nesimuluje funkce payload (duplikace výrazů podle postavení)</li>
+                <li>přehlednější REST API</li>
+                <li>REST API přístupné na stránce <a href="api.html">api.html</a></li>
+            </ul>
+        </change>
         <change version="0.8.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
                 <li>pokročilá indexace překladových ekvivalentů, včetně posílení relevance na základě

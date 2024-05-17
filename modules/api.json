@@ -12,25 +12,17 @@
         }
     ],
     "tags": [
-		{
-			"name": "query",
-			"description": "Route specifies query parameters"
-		},
         {
-			"name": "body",
-			"description": "Route specifies expected body"
+			"name": "auth",
+			"description": "Authenticate, login or logout database user"
 		},
 		{
 			"name": "files",
 			"description": "File up- and downloads of various kinds"
 		},
-        {
-            "name": "errors",
-            "description": "Routes with custom error handling"
-        },
-        {
-			"name": "auth",
-			"description": "Authenticate, login or logout database user"
+		{
+			"name": "query",
+			"description": "Route specifies query parameters"
 		}
 	],
     "security": [
@@ -60,7 +52,7 @@
                 "summary": "User Logout",
                 "description": "End session of the current user",
                 "operationId": "auth:logout",
-                "tags": ["auth", "query"],
+                "tags": ["auth"],
                 "parameters": [
                     {
                         "name": "logout",
@@ -103,7 +95,7 @@
             "post": {
                 "summary": "User Login",
                 "description": "Start an authenticated session for the given user",
-                "tags": ["auth", "body"],
+                "tags": ["auth"],
                 "operationId": "auth:login",
                 "requestBody": {
                     "required": true,
@@ -177,7 +169,7 @@
                 "x-constraints": {
 					"groups": ["tei"]
 				},
-                "tags": ["path", "body", "files"],
+                "tags": ["files"],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -231,7 +223,7 @@
                 "x-constraints": {
 					"groups": ["tei"]
 				},
-                "tags": ["path",  "files"],
+                "tags": ["files"],
                 "parameters": [
                     {
                         "name": "collection",
@@ -268,7 +260,7 @@
                 "x-constraints": {
 					"groups": ["tei"]
 				},
-                "tags": ["path", "body", "files"],
+                "tags": ["files"],
                 "requestBody": {
                     "required": true,
                     "content": {

@@ -59,12 +59,12 @@ else if (
         ($local:isget and $exist:path eq "/api.html") or 
         ($local:isget and matches($exist:path, "^/[^/]+\.json$", "s"))
         )   then
-    <dispatch xmlns="http://exist.sourceforge.net/NS/exist" />
-    (:
+    (: <dispatch xmlns="http://exist.sourceforge.net/NS/exist" /> :)
+    
     <dispatch xmlns="http://exist.sourceforge.net/NS/exist">
         <forward url="{$exist:controller}/templates/api.html"/>
     </dispatch>
-    :)
+    
     
 (: static resources from the resources, transform, templates, odd or modules subirectories are directly returned :)
 else if (matches($exist:path, "^.*/(resources|transform|templates)/.*$")

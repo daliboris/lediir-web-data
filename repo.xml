@@ -12,6 +12,21 @@
     <permissions user="redaktor" group="tei" mode="rw-r--r--"/>
     <deployed/>
     <changelog>
+        <change version="0.10.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>u ekvivalentů a zpětných odkazů indexace obsahu pouze originálních heslových statí (nikoli kopií)</li>
+                <li>samostatná indexace zpětných odkazů pro češtinu a angličtinu</li>
+                <li>zpětné odkazy jako samostatný index s vlastnostmi pro
+                    <ul>
+                        <li>textový obsah</li>
+                        <li>jazyk ekvivalentu</li>
+                        <li>umocnění pro pořadí významu</li>
+                        <li>umocnění pro jedinečnost významu</li>
+                    </ul>
+                </li>
+                <li>refaktoring a pročištění zdrojového kódu</li>
+            </ul>
+        </change>
         <change version="0.9.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
                 <li>indexace obsahu pouze originálních heslových statí, nikoli jejich kopií</li>

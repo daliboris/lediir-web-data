@@ -17,26 +17,12 @@
     <facet dimension="dictionary" expression="nav:get-metadata(., 'title[@type=main|full]-content')"/>
     <facet dimension="language" expression="nav:get-metadata(., 'language')"/>
    </text>
-
-   <!--
-   <text match="/tei:TEI/tei:text">
-    <ignore qname="tei:div"/>
-    <field name="title" expression="nav:get-metadata(ancestor::tei:TEI, 'title[@type=main|full]-content')"/>
-    <field name="author" expression="nav:get-metadata(ancestor::tei:TEI, 'author')"/>
-    <field name="language" expression="nav:get-metadata(ancestor::tei:TEI, 'language')"/>
-    <field name="date" expression="nav:get-metadata(ancestor::tei:TEI, 'date')"/>
-    <field name="file" expression="util:document-name(.)"/>
-    <facet dimension="language" expression="nav:get-metadata(ancestor::tei:TEI, 'language')"/>
-    <facet dimension="dictionary" expression="nav:get-metadata(ancestor::tei:TEI, 'title[@type=main|full]-content')"/>
-   </text>
-   -->
    <text qname="tei:div">
     <ignore qname="tei:div"/>
     <ignore qname="tei:entry"/>
     <field name="letter" expression="nav:get-metadata(., 'letter')"/>
     <field name="chapterId" expression="nav:get-metadata(., 'chapterId')"/>
     <field name="chapter" expression="nav:get-metadata(., 'chapter')"/>
-    <!-- <facet dimension="language" expression="nav:get-metadata(ancestor::tei:TEI, 'language')"/> -->
     <facet dimension="dictionary" expression="nav:get-metadata(ancestor::tei:TEI, 'title[@type=main|full]-content')"/>
    </text>
    <text qname="tei:entry">
@@ -54,6 +40,8 @@
     <field name="translation" expression="nav:get-metadata(., 'translation')"/>
     <field name="domain" expression="nav:get-metadata(., 'domain')" />
     <field name="reversal" expression="nav:get-metadata(., 'reversal')" />
+    <field name="reversal-en" expression="nav:get-metadata(., 'reversal-en')" />
+    <field name="reversal-cz" expression="nav:get-metadata(., 'reversal-cz')" />
     <field name="partOfSpeechAll" expression="nav:get-metadata(., 'partOfSpeechAll')"/>
     <field name="styleAll" expression="nav:get-metadata(., 'styleAll')"/>
     <field name="pronunciation" expression="nav:get-metadata(., 'pronunciation')"/>
@@ -79,6 +67,12 @@
     <field name="senseUniquenessBoost" expression="nav:get-metadata(., 'senseUniquenessBoost')" type="xs:double"/>
     <field name="sortKey" expression="nav:get-metadata(., 'sortKey')"/>
    </text>
+   <text qname="tei:ref">
+    <field name="reversal" expression="nav:get-metadata(., 'reversal')"/>
+    <field name="sensePositionBoost" expression="nav:get-metadata(., 'sensePositionBoost')" type="xs:double"/>
+    <field name="senseUniquenessBoost" expression="nav:get-metadata(., 'senseUniquenessBoost')" type="xs:double"/>
+    <field name="language" expression="nav:get-metadata(., 'language')"/>
+   </text>   
    <text qname="tei:head"/>
    <text match="//tei:titleStmt/tei:title"/>
    <text match="//tei:msDesc/tei:head"/>
@@ -87,21 +81,6 @@
     <field name="idno" expression="nav:get-metadata(., 'category-idno')" />
     <field name="term" expression="nav:get-metadata(., 'category-term')" />
    </text>
-  <!-- 
-   <text qname="dbk:article">
-    <ignore qname="dbk:section"/>
-    <field name="title" expression="nav:get-metadata(., 'title')"/>
-    <field name="file" expression="util:document-name(.)"/>
-    <facet dimension="genre" expression="nav:get-metadata(., 'genre')" hierarchical="yes"/>
-    <facet dimension="language" expression="nav:get-metadata(., 'language')"/>
-   </text>
-   <text qname="dbk:section">
-    <ignore qname="dbk:section"/>
-    <facet dimension="genre" expression="nav:get-metadata(ancestor::dbk:article, 'genre')" hierarchical="yes"/>
-    <facet dimension="language" expression="nav:get-metadata(ancestor::dbk:article, 'language')"/>
-   </text>
-   <text qname="dbk:title"/>
-  -->
   </lucene>
   <range>
     <create qname="@type" type="xs:string"/>

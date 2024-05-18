@@ -192,6 +192,8 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
       idx:get-sense-metadata($root, $field)
     else if($root instance of element(tei:seg)) then
        idx:get-seg-metadata($root, $field)
+     else if($root instance of element(tei:ref) and $root[@type="reversal"]) then
+       idx:get-reversal-metadata($root, $field)
     (: do not index copy of the entry, only original entries shoud be found :)
     else if($root instance of element(tei:entry) and $root[@copyOf]) then
         ()
@@ -235,7 +237,7 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "chapterId" return $root/ancestor-or-self::tei:div[1]/@xml:id
             case "chapter" return $root/ancestor-or-self::tei:div[@type='letter']/@n
             case "lemma" return $root/tei:form[@type=('lemma', 'variant')]/tei:orth
-            case "headword" return let $lemma := $root/tei:form[@type=('lemma', 'variant')] return ($lemma/tei:orth, $lemma/tei:pron, $root//tei:def/tei:seg[@type='equivalent'], $root//tei:ref[@type='reversal'])
+            case "headword" return idx:get-headword($root)
             case "object-language" return idx:get-object-language($root)
             case "target-language" return idx:get-target-language($root)
             case "definition" return idx:get-definition-index($root) (: $root//tei:sense//tei:def/normalize-space(.) :)
@@ -245,7 +247,9 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "partOfSpeechAll" return idx:get-pos($root)
             case "pronunciation" return $root/tei:form[@type=('lemma', 'variant')]/tei:pron
             case "complexForm" return $root/tei:entry[@type='complexForm']/tei:form//tei:orth/translate(., " ", "")
-            case "reversal" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('en', 'cs-CZ')]
+            case "reversal" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('en', 'cs-CZ', 'cs')]
+            case "reversal-en" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('en')]
+            case "reversal-cz" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('cs-CZ', 'cs')]
             case "domain" return idx:get-domain($root)
             case "domainHierarchy" return idx:get-domain-hierarchy($root)
             case "style" return $root//tei:usg[@type='textType']
@@ -260,14 +264,48 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
                 ()
 };
 
-declare function idx:get-seg-metadata($root as element(), $field as xs:string) {
+declare function idx:get-headword($root as element()) {
+let $lemma := $root/tei:form[@type=('lemma', 'variant')] 
+return (
+    $lemma/tei:orth, $lemma/tei:pron,
+    $root/tei:sense/tei:def/tei:seg[@type='equivalent'], 
+    $root//tei:ref[@type='reversal'])
+};
 
-    let $entry := $root/ancestor::tei:entry
+declare function idx:get-reversal-metadata($root as element(), $field as xs:string) {
+    let $entry := $root/ancestor::tei:entry[1]
     let $sense := $root/ancestor::tei:sense
     let $sense-position := count($sense/preceding-sibling::tei:sense) + 1
     let $sense-count := count($entry//tei:sense)
 
-    return
+ return if($entry[@copyOf]) then
+        ()
+    else
+      switch ($field)
+          case "reversal"
+              return $root/text()/normalize-space()[. != '']
+          case "sensePositionBoost"
+                return
+                    idx:get-sense-boost($sense-position, $sense-count)
+          case "senseUniquenessBoost"
+              return idx:get-sense-uniqueness-boost($sense-position, $sense-count)
+          case "language" 
+                return $root/@xml:lang
+          default 
+              return ()
+};
+
+declare function idx:get-seg-metadata($root as element(), $field as xs:string) {
+
+    
+    let $entry := $root/ancestor::tei:entry[1]
+    let $sense := $root/ancestor::tei:sense
+    let $sense-position := count($sense/preceding-sibling::tei:sense) + 1
+    let $sense-count := count($entry//tei:sense)
+
+    return if($entry[@copyOf]) then
+        ()
+    else
       switch ($field)
           case "equivalent"
               return $root/text()/normalize-space()[. != '']

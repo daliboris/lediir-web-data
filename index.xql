@@ -339,21 +339,24 @@ declare function idx:get-sense-metadata($root as element(), $field as xs:string)
 };
 
 declare function idx:get-definition-index($sense as element(), $position as xs:integer) {
-  let $text := $sense//tei:def/normalize-space()
-  return if(exists($text)) then
+  let $text := string-join($sense//tei:def/normalize-space(), " ")
+  return if($text = "") then ()
+    else
       let $sense-boost := idx:get-sense-boost($position)
       return idx:emulate-payload($text, $sense-boost, 1)
-      else ()
 };
 
 declare function idx:get-definition-index($entry as element()) { 
     
     for $sense at $i in $entry//tei:sense
-        let $text := $sense//tei:def/normalize-space()
+        return idx:get-definition-index($sense, $i)
+(:
+        let $text := string-join($sense//tei:def/normalize-space(), " ")
         let $sense-boost := idx:get-sense-boost($i)
-        return if(exists($text)) then
-             idx:emulate-payload($text, $sense-boost, 1)
-             else ()
+        return if($text = "") then ()
+             else
+                idx:emulate-payload($text, $sense-boost, 1)
+:)
 };
 
 declare function idx:get-frequency-boost($entry as element()) { 

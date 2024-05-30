@@ -268,7 +268,7 @@ declare function idx:get-headword($root as element()) {
 let $lemma := $root/tei:form[@type=('lemma', 'variant')] 
 return (
     $lemma/tei:orth, $lemma/tei:pron,
-    $root/tei:sense/tei:def/tei:seg[@type='equivalent'], 
+    idx:get-equivalent-text($root/tei:sense/tei:def/tei:seg[@type='equivalent']),
     $root//tei:ref[@type='reversal'])
 };
 
@@ -308,7 +308,7 @@ declare function idx:get-seg-metadata($root as element(), $field as xs:string) {
     else
       switch ($field)
           case "equivalent"
-              return $root/text()/normalize-space()[. != '']
+              return idx:get-equivalent-text($root)
           case "equivalentPositionBoost"
               return idx:get-equivalent-position-boost(xs:integer($root/@n))
           case "corpusFrequencyBoost"
@@ -323,6 +323,10 @@ declare function idx:get-seg-metadata($root as element(), $field as xs:string) {
           default 
               return ()
     
+};
+
+declare function idx:get-equivalent-text($root as element(tei:seg)*) as xs:string* {
+    $root/text()/normalize-space()[. != '']
 };
 
 declare function idx:get-sense-metadata($root as element(), $field as xs:string) {

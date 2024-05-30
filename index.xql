@@ -256,9 +256,9 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "styleAll" return idx:get-style($root)
             case "category-idno" return $root/tei:idno
             case "category-term" return $root/tei:term
-            case "polysemy" return count($root[not(parent::tei:entry)]//tei:sense)
+            case "polysemy" return count($root[not(@copyOf)]/tei:sense)
             case "frequencyScore" return idx:get-frequency-boost($root)
-            case "frequency" return $root//tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
+            case "frequency" return $root/tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
             case "complexFormType" return idx:get-complex-form-type($root)
             default return
                 ()
@@ -343,7 +343,9 @@ declare function idx:get-sense-metadata($root as element(), $field as xs:string)
 };
 
 declare function idx:get-definition-index($sense as element(), $position as xs:integer) {
-  let $text := string-join($sense//tei:def/normalize-space(), " ")
+  let $text := if($idx:parentheses-todo = "remove") then
+     string-join($sense//tei:def/tei:seg[@type='equivalent']/text()/normalize-space(), " ")
+     else string-join($sense//tei:def/normalize-space(), " ")
   return if($text = "") then ()
     else
       let $sense-boost := idx:get-sense-boost($position)
@@ -352,7 +354,7 @@ declare function idx:get-definition-index($sense as element(), $position as xs:i
 
 declare function idx:get-definition-index($entry as element()) { 
     
-    for $sense at $i in $entry//tei:sense
+    for $sense at $i in $entry/tei:sense
         return idx:get-definition-index($sense, $i)
 (:
         let $text := string-join($sense//tei:def/normalize-space(), " ")
@@ -364,7 +366,7 @@ declare function idx:get-definition-index($entry as element()) {
 };
 
 declare function idx:get-frequency-boost($entry as element()) { 
-let $frequency := $entry/tei:usg[@type='frequency'][1]/@value/tokenize(., '-')[1] ! substring(., 2)
+let $frequency :=idx:get-frequency($entry)
     let $frequency := idx:get-frequency-boost-number($frequency)
     return $frequency
 };
@@ -403,7 +405,7 @@ declare function idx:get-sortKey-with-frequency($entry as element()?) as xs:stri
 };
 
 declare function idx:get-frequency($entry as element()?) as xs:string? {
-    $entry//tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
+    $entry/tei:usg[@type='frequency']/@value/tokenize(., '-')[1] ! substring(., 2)
 };
 declare function idx:get-domain-hierarchy($entry as element()?) {
 if(not(exists($idx:taxonomy-root))) 

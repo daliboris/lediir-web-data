@@ -12,6 +12,13 @@
     <permissions user="redaktor" group="tei" mode="rw-r--r--"/>
     <deployed/>
     <changelog>
+        <change version="0.11.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>načtení údajů o ekvivalentu bez glosy (tj. textu v závorkách)</li>
+                <li>vynechání dat z podřazených hesel při indexaci (u frekvence, počtu významů)</li>
+                <li>refaktoring a pročištění zdrojového kódu</li>
+            </ul>
+        </change>
         <change version="0.10.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
                 <li>u ekvivalentů a zpětných odkazů indexace obsahu pouze originálních heslových statí (nikoli kopií)</li>

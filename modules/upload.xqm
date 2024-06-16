@@ -21,23 +21,29 @@ declare option exist:serialize "method=xml media-type=application/xml";
 
 
 declare function upld:upload($request as map(*)) {
+    let $start-time as xs:time := util:system-time()
+    return
     try {
         let $name := request:get-uploaded-file-name("file")
         let $data := request:get-uploaded-file-data("file")
+        let $upload-result := upld:upload($request?parameters?collection, $name, $data)
+        let $end-time as xs:time := util:system-time()
     (: let $log := console:log($upld:channel, "$name: " || $name) :)
     return
         (: roaster:response(201, map { 
                 "uploaded": $upload:download-path || $file-name }) :)
         (: array { upld:upload($request?parameters?collection, $name, $data) } :)
         roaster:response(201,
-        <result>
-            {upld:upload($request?parameters?collection, $name, $data)}
+        <result file-name="{$name}" start="{$start-time}" end="{$end-time}" duration="{seconds-from-duration($end-time - $start-time)}s">
+            {$upload-result}
         </result>
         )
     }
     catch * {
+        let $end-time as xs:time := util:system-time()
         (: roaster:response(400, map { "error": $err:description })         :)
-        roaster:response(400, <error>{ $err:description }</error>)
+        return
+        roaster:response(400, <error start="{$start-time}" end="{$end-time}" duration="{seconds-from-duration($end-time - $start-time)}s">{ $err:description }</error>)
     }
         
 };

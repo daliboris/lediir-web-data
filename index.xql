@@ -23,6 +23,8 @@ declare function functx:substring-before-last
    else ''
  } ;
 
+declare variable $idx:allowed-definition-languages := ("cs", "cs-CZ");
+declare variable $idx:allowed-reversal-languages := ("cs", "cs-CZ");
 declare variable $idx:parentheses-todo := "remove"; (: "remove" | "move" | "keep" :)
 declare variable $idx:payload-todo := false();
 
@@ -228,7 +230,7 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
                                                                $header//tei:msDesc/tei:head,
                                                                $header//tei:titleStmt/(tei:title[@type = ('main', 'full')]|tei:title)[1]
                                                                ) ! normalize-space(), " - ")
-            case "entry" return idx:get-entry-index($root)
+            case "entry-content" return idx:get-entry-index($root)
             case "sortKey" return idx:get-sortKey($root) (: if($root/@sortKey)
               then $root/@sortKey
               else $root//tei:form[@type=('lemma', 'variant')][1]/tei:orth[1] :)
@@ -241,15 +243,17 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "object-language" return idx:get-object-language($root)
             case "target-language" return idx:get-target-language($root)
             case "definition" return idx:get-definition-index($root) (: $root//tei:sense//tei:def/normalize-space(.) :)
+            case "definition-cs" return idx:get-definition-index($root, 'cs')
+            case "definition-en" return idx:get-definition-index($root, 'en')
             case "example" return $root//tei:sense//tei:cit[@type='example']/tei:quote
             case "translation" return $root//tei:sense//tei:cit[@type='example']/tei:cit[@type='translation']/tei:quote
             case "partOfSpeech" return $root//tei:gram[@type='pos']
             case "partOfSpeechAll" return idx:get-pos($root)
             case "pronunciation" return $root/tei:form[@type=('lemma', 'variant')]/tei:pron
             case "complexForm" return $root/tei:entry[@type='complexForm']/tei:form//tei:orth/translate(., " ", "")
-            case "reversal" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('cs-CZ', 'cs')]
+            case "reversal" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=$idx:allowed-reversal-languages]
+            case "reversal-cs" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('cs-CZ', 'cs')]
             case "reversal-en" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('en')]
-            case "reversal-cz" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('cs-CZ', 'cs')]
             case "domain" return idx:get-domain($root)
             case "domainHierarchy" return idx:get-domain-hierarchy($root)
             case "style" return $root//tei:usg[@type='textType']
@@ -268,8 +272,8 @@ declare function idx:get-headword($root as element()) {
 let $lemma := $root/tei:form[@type=('lemma', 'variant')] 
 return (
     $lemma/tei:orth, $lemma/tei:pron,
-    idx:get-equivalent-text($root/tei:sense/tei:def[@xml:lang='cs-CZ']/tei:seg[@type='equivalent']),
-    $root//tei:ref[@type='reversal'][@xml:lang='cs-CZ'])
+    idx:get-equivalent-text($root/tei:sense/tei:def[@xml:lang=$idx:allowed-definition-languages]/tei:seg[@type='equivalent']),
+    $root//tei:ref[@type='reversal'][@xml:lang=$idx:allowed-reversal-languages])
 };
 
 declare function idx:get-reversal-metadata($root as element(), $field as xs:string) {
@@ -335,34 +339,34 @@ declare function idx:get-sense-metadata($root as element(), $field as xs:string)
   let $all-senses := count($entry//tei:sense)
   return
   switch ($field)
-    case "definition" return idx:get-definition-index($root, 0)
+    case "definition" return idx:get-definition-index($root, $idx:allowed-definition-languages, 0)
     case "senseScore" return idx:get-sense-boost($sense-number, $all-senses)
     case "frequencyScore" return idx:get-frequency-boost($entry)
     default 
       return ()
 };
 
-declare function idx:get-definition-index($sense as element(), $position as xs:integer) {
+declare function idx:get-definition-index($sense as element(), $language as xs:string*, $position as xs:integer) {
+  let $definition := if(empty($language)) then $sense//tei:def else $sense//tei:def[@xml:lang=$language]
   let $text := if($idx:parentheses-todo = "remove") then
-     string-join($sense//tei:def/tei:seg[@type='equivalent']/text()/normalize-space(), " ")
-     else string-join($sense//tei:def/normalize-space(), " ")
+     string-join($definition/tei:seg[@type='equivalent']/text()/normalize-space(), " ")
+     else string-join($definition/normalize-space(), " ")
   return if($text = "") then ()
     else
       let $sense-boost := idx:get-sense-boost($position)
       return idx:emulate-payload($text, $sense-boost, 1)
 };
 
+declare function idx:get-definition-index($entry as element(), $language as xs:string*) { 
+    
+    for $sense at $i in $entry/tei:sense
+        return idx:get-definition-index($sense, $language, $i)
+};
+
 declare function idx:get-definition-index($entry as element()) { 
     
     for $sense at $i in $entry/tei:sense
-        return idx:get-definition-index($sense, $i)
-(:
-        let $text := string-join($sense//tei:def/normalize-space(), " ")
-        let $sense-boost := idx:get-sense-boost($i)
-        return if($text = "") then ()
-             else
-                idx:emulate-payload($text, $sense-boost, 1)
-:)
+        return idx:get-definition-index($sense, $idx:allowed-definition-languages, $i)
 };
 
 declare function idx:get-frequency-boost($entry as element()) { 

@@ -47,7 +47,7 @@
         }
     },
     "paths": {
-        "/logout": {
+        "/api/logout": {
             "get": {
                 "summary": "User Logout",
                 "description": "End session of the current user",
@@ -91,7 +91,7 @@
                 }
             }
         },
-        "/login": {
+        "/api/login": {
             "post": {
                 "summary": "User Login",
                 "description": "Start an authenticated session for the given user",
@@ -161,61 +161,7 @@
                 "security": [{ "cookieAuth": [] }]
             }
         },
-        "/upload/single/{path}": {
-            "post": {
-                "summary": "Upload a single file.",
-                "description": "In this example, the file path is part of the URL.",
-                "operationId": "upload:single",
-                "x-constraints": {
-					"groups": ["tei"]
-				},
-                "tags": ["files"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "multipart/form-data": {
-                            "schema": {
-                                "type": "object",
-                                "required": ["file"],
-                                "properties": {
-                                    "file": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "parameters": [
-                    {
-                        "name": "path",
-                        "in": "path",
-                        "required": true,
-                        "schema":{ "type": "string" }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created uploaded file",
-                        "content": {
-                            "application/json": {
-                                "schema": { "type": "string" }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Content was invalid",
-                        "content": {
-                            "application/json": {
-                                "schema": { "type": "string" }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/clean/{collection}" : {
+        "/api/clean/{collection}" : {
             "delete" : {
                 "summary": "Cleans specified collection.",
                 "description": "Removes all content of the collection including collection itself.",
@@ -252,13 +198,13 @@
                 }
             }
         },
-        "/upload/zip-to/{collection}": {
+        "/api/upload/{collection}": {
             "post": {
-                "summary": "Upload a single zip file.",
-                "description": "In this example, the collection path is part of the URL.",
+                "summary": "Upload a single file (zip, xconf, or xml) to a collection.",
+                "description": "The collection path is part of the URL.",
                 "operationId": "upld:upload",
                 "x-constraints": {
-					"groups": ["tei"]
+					"groups": ["tei", "dba"]
 				},
                 "tags": ["files"],
                 "requestBody": {
@@ -306,7 +252,7 @@
                 }
             }
         },
-        "/report" : {
+        "/api/report/{collection}" : {
             "get": {
                 "summary": "Report of the index values in the collection",
                 "description": "Shows values for each index defined for the collection.",
@@ -318,11 +264,10 @@
                 "parameters": [
                     {
                         "name": "collection",
-                        "in": "query",
+                        "in": "path",
                         "description": "Collection for which the report will be generated",
-                        "schema": {
-                            "type": "string"
-                        }
+                        "required": true,
+                        "schema":{ "type": "string" }
                     },
                     {
                         "name": "count",

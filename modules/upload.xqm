@@ -50,7 +50,7 @@ declare function upld:upload($request as map(*)) {
 
 
 declare %private function upld:upload($root, $paths, $payloads) {
-    let $collectionPath := $config:data-root || "/" || $root
+    let $collectionPath := if(starts-with($root, 'db/system/config' || $config:data-root)) then "/" || $root else $config:data-root || "/" || $root
     let $result := for-each-pair($paths, $payloads, function($path, $data) {
         let $paths :=
             let $log := console:log($upld:channel, "$collectionPath: " || $collectionPath)
@@ -64,6 +64,11 @@ declare %private function upld:upload($root, $paths, $payloads) {
                         (: let $log := console:log($upld:channel, "$unzip: " || string-join($unzip//entry/@path, '; ')) :)
                         (: return $unzip//entry/@path :)
                         return $unzip
+                    else if (ends-with($path, ".xml") or ends-with($path, ".xconf")) then
+                        let $stored := xmldb:store($collectionPath, xmldb:encode($path), $data)
+                        return <entries target-collection="{$collectionPath}" count-stored="{if($stored) then 1 else 0}" count-unable-to-store="{if($stored) then 0 else 1}" deleted="false">
+                            <entry path="{$collectionPath}" file="{$path}" />
+                         </entries>
                     else
                     ()
                 else

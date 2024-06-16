@@ -255,7 +255,7 @@
         "/upload/zip-to/{collection}": {
             "post": {
                 "summary": "Upload a single zip file.",
-                "description": "In this example, the file path is part of the URL.",
+                "description": "In this example, the collection path is part of the URL.",
                 "operationId": "upld:upload",
                 "x-constraints": {
 					"groups": ["tei"]

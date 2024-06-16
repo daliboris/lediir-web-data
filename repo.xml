@@ -12,6 +12,15 @@
     <permissions user="redaktor" group="tei" mode="rw-r--r--"/>
     <deployed/>
     <changelog>
+        <change version="0.12.0">
+            <ul xmlns="http://www.w3.org/1999/xhtml">
+                <li>indexace pouze českých pasáží, tj. bez angličtiny (kromě sémantických okruhů a metajazyka)</li>
+                <li>rozlišení indexace českých a anglických významů a zpětných odkazů</li>
+                <li>zjednodušení REST API (/api/ v URL adrese, jeden koncový bod pro nahrání souborů zip, xml a xconf)</li>
+                <li>časové údaje o nahrávaných souborech</li>
+                <li>změna identifikátoru aplikace (balíčku eXist-db)</li>
+            </ul>
+        </change>
         <change version="0.11.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
                 <li>načtení údajů o ekvivalentu bez glosy (tj. textu v závorkách)</li>

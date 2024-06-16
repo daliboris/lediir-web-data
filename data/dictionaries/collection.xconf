@@ -26,7 +26,7 @@
     <facet dimension="dictionary" expression="nav:get-metadata(ancestor::tei:TEI, 'title[@type=main|full]-content')"/>
    </text>
    <text qname="tei:entry">
-    <field name="entry" expression="nav:get-metadata(., 'entry')"/>
+    <field name="entry-content" expression="nav:get-metadata(., 'entry-content')"/>
     <field name="sortKey" expression="nav:get-metadata(., 'sortKey')"/>
     <field name="sortKeyWithFrequency" expression="nav:get-metadata(., 'sortKeyWithFrequency')"/>
     <field name="letter" expression="nav:get-metadata(., 'letter')"/>
@@ -35,13 +35,15 @@
     <field name="lemma" expression="nav:get-metadata(., 'lemma')" />
     <field name="headword" expression="nav:get-metadata(., 'headword')" />
     <field name="definition" expression="nav:get-metadata(., 'definition')" />
+    <field name="definition-en" expression="nav:get-metadata(., 'definition-en')" />
+    <field name="definition-cs" expression="nav:get-metadata(., 'definition-cs')" />
     <field name="frequencyScore" expression="nav:get-metadata(., 'frequencyScore')" />
     <field name="example" expression="nav:get-metadata(., 'example')"/>
     <field name="translation" expression="nav:get-metadata(., 'translation')"/>
     <field name="domain" expression="nav:get-metadata(., 'domain')" />
     <field name="reversal" expression="nav:get-metadata(., 'reversal')" />
     <field name="reversal-en" expression="nav:get-metadata(., 'reversal-en')" />
-    <field name="reversal-cz" expression="nav:get-metadata(., 'reversal-cz')" />
+    <field name="reversal-cs" expression="nav:get-metadata(., 'reversal-cs')" />
     <field name="partOfSpeechAll" expression="nav:get-metadata(., 'partOfSpeechAll')"/>
     <field name="styleAll" expression="nav:get-metadata(., 'styleAll')"/>
     <field name="pronunciation" expression="nav:get-metadata(., 'pronunciation')"/>

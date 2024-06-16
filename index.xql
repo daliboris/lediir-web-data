@@ -247,7 +247,7 @@ declare function idx:get-metadata($root as element(), $field as xs:string) {
             case "partOfSpeechAll" return idx:get-pos($root)
             case "pronunciation" return $root/tei:form[@type=('lemma', 'variant')]/tei:pron
             case "complexForm" return $root/tei:entry[@type='complexForm']/tei:form//tei:orth/translate(., " ", "")
-            case "reversal" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('en', 'cs-CZ', 'cs')]
+            case "reversal" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('cs-CZ', 'cs')]
             case "reversal-en" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('en')]
             case "reversal-cz" return $root//tei:xr[@type='related' and @subtype='Reversals']/tei:ref[@xml:lang=('cs-CZ', 'cs')]
             case "domain" return idx:get-domain($root)
@@ -268,8 +268,8 @@ declare function idx:get-headword($root as element()) {
 let $lemma := $root/tei:form[@type=('lemma', 'variant')] 
 return (
     $lemma/tei:orth, $lemma/tei:pron,
-    idx:get-equivalent-text($root/tei:sense/tei:def/tei:seg[@type='equivalent']),
-    $root//tei:ref[@type='reversal'])
+    idx:get-equivalent-text($root/tei:sense/tei:def[@xml:lang='cs-CZ']/tei:seg[@type='equivalent']),
+    $root//tei:ref[@type='reversal'][@xml:lang='cs-CZ'])
 };
 
 declare function idx:get-reversal-metadata($root as element(), $field as xs:string) {
@@ -380,7 +380,7 @@ declare function idx:get-entry-metadata($entry as element(), $field as xs:string
 
 declare function idx:get-entry-index($entry as element()) as xs:string* { 
     let $elements := for $element in $entry/*[not(self::tei:entry)]//*[not(*)]
-        return if($element[self::tei:pc] or $element[self::tei:lbl[@type='cross-rerefence']]) then () else $element
+        return if($element[self::tei:pc] or $element[self::tei:metamark] or $element[self::tei:lbl[@type='cross-rerefence']]) then () else $element
     for $element in $elements
         let $terminology := if ($element/@ana) then
             idx:get-values-from-terminology($entry, $element/@ana)
